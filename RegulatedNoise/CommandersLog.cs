@@ -113,33 +113,40 @@ namespace RegulatedNoise
 
         public void LoadLog(bool force = false)
         {
-            var openFile =new OpenFileDialog
+            try
             {
-                DefaultExt = "xml",
-                Multiselect = false,
-                Filter = "XML (*.xml)|*.xml",
-                InitialDirectory = Environment.CurrentDirectory
-            };
+                var openFile = new OpenFileDialog
+                {
+                    DefaultExt = "xml",
+                    Multiselect = false,
+                    Filter = "XML (*.xml)|*.xml",
+                    InitialDirectory = Environment.CurrentDirectory
+                };
 
-            if(!force)
-                openFile.ShowDialog();
+                if (!force)
+                    openFile.ShowDialog();
 
-            if (force || openFile.FileNames.Length > 0)
-            {
-                var serializer =new XmlSerializer(typeof(SortableBindingList<CommandersLogEvent>));
+                if (force || openFile.FileNames.Length > 0)
+                {
+                    var serializer = new XmlSerializer(typeof(SortableBindingList<CommandersLogEvent>));
 
-                if (force && !File.Exists("CommandersLogAutoSave.xml"))
-                    return;
+                    if (force && !File.Exists("CommandersLogAutoSave.xml"))
+                        return;
 
-                var fs =new FileStream(force ? "CommandersLogAutoSave.xml" : openFile.FileName, FileMode.Open);
-                var reader =XmlReader.Create(fs);
+                    var fs = new FileStream(force ? "CommandersLogAutoSave.xml" : openFile.FileName, FileMode.Open);
+                    var reader = XmlReader.Create(fs);
 
-                var logEvents2 = (SortableBindingList<CommandersLogEvent>)serializer.Deserialize(reader);
-                LogEvents =logEvents2;
-                fs.Close();
+                    var logEvents2 = (SortableBindingList<CommandersLogEvent>)serializer.Deserialize(reader);
+                    LogEvents = logEvents2;
+                    fs.Close();
+                }
+
+                UpdateCommandersLogListView();
             }
-
-            UpdateCommandersLogListView();
+            catch (Exception ex)
+            {
+                throw new Exception("Error loading CommandersLog", ex);
+            }
         }
 
         public void UpdateCommandersLogListView()

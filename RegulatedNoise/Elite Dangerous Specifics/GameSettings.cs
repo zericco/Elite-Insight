@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Windows.Forms;
 using System.Xml;
 using System.Xml.Serialization;
@@ -15,18 +16,25 @@ namespace RegulatedNoise
         
         public GameSettings()
         {
-            //Load DisplaySettings from AppData
-            LoadDisplaySettings();
+            try
+            {
+                //Load DisplaySettings from AppData
+                LoadDisplaySettings();
 
-            //Load AppConfig
-            LoadAppConfig();
+                //Load AppConfig
+                LoadAppConfig();
 
-            //Set up some filewatchers, If user changes config its reflected here
-            WatcherDisplaySettings();
-            WatcherAppDataSettings(); //Currently disabled as we only check Verbose logging and that cant be changed from the game
+                //Set up some filewatchers, If user changes config its reflected here
+                WatcherDisplaySettings();
+                WatcherAppDataSettings(); //Currently disabled as we only check Verbose logging and that cant be changed from the game
 
-            //Check and Request for Verbose Logging
-            CheckAndRequestVerboseLogging();
+                //Check and Request for Verbose Logging
+                CheckAndRequestVerboseLogging();
+            }
+            catch (Exception ex)
+            {
+                cErr.processError(ex, "Error in GameSettings");
+            }
         }
 
         void CheckAndRequestVerboseLogging()
@@ -78,17 +86,32 @@ namespace RegulatedNoise
 
         void LoadAppConfig()
         {
-            var configFile = Path.Combine(Form1.RegulatedNoiseSettings.GamePath, "AppConfig.xml");
-            var serializer = new XmlSerializer(typeof (AppConfig));
-            using (var myFileStream = new FileStream(configFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            try
             {
-                AppConfig = (AppConfig) serializer.Deserialize(myFileStream);    
+                var configFile = Path.Combine(Form1.RegulatedNoiseSettings.GamePath, "AppConfig.xml");
+                var serializer = new XmlSerializer(typeof(AppConfig));
+                using (var myFileStream = new FileStream(configFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                {
+                    AppConfig = (AppConfig)serializer.Deserialize(myFileStream);
+                }
             }
+            catch (Exception ex)
+            {
+                throw new Exception("Error in LoadAppConfig()", ex);
+            }
+                
         }
 
-        private void LoadAppConfig(object sender, FileSystemEventArgs e)
+        private void AppData_Changed(object sender, FileSystemEventArgs e)
         {
-            LoadAppConfig();
+            try
+            {
+                LoadAppConfig();
+            }
+            catch (Exception ex)
+            {
+                cErr.processError(ex, "Error in AppData_Changed()");
+            }
         }
 
         void LoadDisplaySettings()
@@ -99,9 +122,26 @@ namespace RegulatedNoise
                 return;
             }
             var serializer = new XmlSerializer(typeof(EdDisplayConfig));
-            using (var myFileStream = new FileStream(configFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+
+            try
             {
-                Display = (EdDisplayConfig)serializer.Deserialize(myFileStream);
+                using (var myFileStream = new FileStream(configFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                {
+                    Display = (EdDisplayConfig)serializer.Deserialize(myFileStream);
+                }
+            }
+            catch (Exception ex)
+            {
+                if (ex.GetBaseException().HResult == (int)-2146232000)
+                {
+                    // System.Xml.XmlException : no root element (ED is rewriting the file sometimes ?) - ignore
+                    return;
+                }
+                else
+                {
+                    cErr.processError(ex, "Error in Function \"LoadDisplaySettings\"");
+                }
+                
             }
         }
 
@@ -130,7 +170,7 @@ namespace RegulatedNoise
             _appdataWatcher.Path = Form1.RegulatedNoiseSettings.GamePath;
             _appdataWatcher.Filter = "AppConfig.xml";
             _appdataWatcher.NotifyFilter = NotifyFilters.LastWrite;
-            _appdataWatcher.Changed += LoadAppConfig;
+            _appdataWatcher.Changed += AppData_Changed;
             _appdataWatcher.EnableRaisingEvents = false; //Set to TRUE to enable watching!
         }
 

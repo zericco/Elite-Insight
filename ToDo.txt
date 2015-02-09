@@ -6,6 +6,12 @@ todo:
 
 
 -------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------
+1.8.4-0.0.3b
+   * added new error handling in some functions
+   * automatically generated "Jumped To ..." event is working again
+   * crash while re-reading GameSettings.xml fixed
+-------------------------------------------------------------------------------------
 1.8.4-0.0.2
    * added "Microbial Furnaces", "Advanced Catalysers" and "Resonating Separators" as commodity
    * added missing Dataset "dsCommodities" and class "enumBindTo" to repositiory (relevant for compiling source)
