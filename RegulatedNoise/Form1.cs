@@ -51,7 +51,7 @@ namespace RegulatedNoise
         private TabPage _EDDNTabPage;
         private Int32 _EDDNTabPageIndex;
         private string _LoggedSystem;
-        
+        private bool _setCBSortingIsActive = false;
 
         //Implementation of the new classlibrary
         public EdSystem CurrentSystem;
@@ -83,7 +83,7 @@ namespace RegulatedNoise
 
                 _logger.Log("  - initialised component");
 
-                GameSettings = new GameSettings();
+                GameSettings = new GameSettings(this);
 
                 _logger.Log("  - loaded game settings");
 
@@ -114,6 +114,7 @@ namespace RegulatedNoise
                 OcrCalibrator = new OcrCalibrator();
                 OcrCalibrator.LoadCalibration();
                 var OcrCalibratorTabPage = new TabPage("OCR Calibration");
+                OcrCalibratorTabPage.Name = "OCR_Calibration";
                 var oct = new OcrCalibratorTab { Dock = DockStyle.Fill };
                 OcrCalibratorTabPage.Controls.Add(oct);
                 tabControl3.Controls.Add(OcrCalibratorTabPage);
@@ -203,6 +204,11 @@ namespace RegulatedNoise
                 // load commodities in the correct language
                 loadCommodities(RegulatedNoiseSettings.Language);
                 loadCommodityLevels(RegulatedNoiseSettings.Language);
+
+                setOCRCalibrationTabVisibility();
+
+                cbSortingComboboxes.Checked = RegulatedNoiseSettings.SortingComboboxes;
+                applyComboboxSetting();    
 
             }
             catch (Exception ex)
@@ -809,14 +815,31 @@ namespace RegulatedNoise
 
         public void SaveSettings()
         {
-            var fileName = "RegulatedNoiseSettings.xml";
-            if (!File.Exists(fileName))
-                File.Delete(fileName);
+            string newFile, backupFile, currentFile;
 
-            var stream = new FileStream(fileName, FileMode.Create, FileAccess.Write, FileShare.None);
+            currentFile = "RegulatedNoiseSettings.xml";
+
+            newFile     = String.Format("{0}_new{1}", Path.GetFileNameWithoutExtension(currentFile), Path.GetExtension(currentFile));
+            backupFile  = String.Format("{0}_bak{1}", Path.GetFileNameWithoutExtension(currentFile), Path.GetExtension(currentFile));
+
+            var stream = new FileStream(newFile, FileMode.Create, FileAccess.Write, FileShare.None);
             var x = new XmlSerializer(RegulatedNoiseSettings.GetType());
             x.Serialize(stream, RegulatedNoiseSettings);
             stream.Close();
+
+            // we delete the current file not until the new file is written without errors
+
+            // delete old backup
+            if (File.Exists(backupFile))
+                File.Delete(backupFile);
+
+            // rename current file to old backup
+            if (File.Exists(currentFile))
+                File.Move(currentFile, backupFile);
+
+            // rename new file to current file
+            File.Move(newFile, currentFile);
+
         }
 
 
@@ -869,6 +892,7 @@ namespace RegulatedNoise
         private void SaveCommodityData(bool force = false)
         {
             SaveFileDialog saveFile = new SaveFileDialog();
+            string newFile, backupFile, currentFile;
 
             if (force)
                 saveFile.FileName = "AutoSave.csv";
@@ -879,12 +903,16 @@ namespace RegulatedNoise
             saveFile.DefaultExt = "csv";
             saveFile.Filter = "CSV (*.csv)|*.csv";
 
+
             if (force || saveFile.ShowDialog() == DialogResult.OK)
             {
-                if (File.Exists(saveFile.FileName))
-                    File.Delete(saveFile.FileName);
 
-                var writer = new StreamWriter(File.OpenWrite(saveFile.FileName));
+                currentFile     = saveFile.FileName;
+                newFile         = String.Format("{0}_new{1}", Path.GetFileNameWithoutExtension(currentFile), Path.GetExtension(currentFile));
+                backupFile      = String.Format("{0}_bak{1}", Path.GetFileNameWithoutExtension(currentFile), Path.GetExtension(currentFile));
+
+                var writer = new StreamWriter(File.OpenWrite(newFile));
+                    
                 writer.WriteLine("System;Station;Commodity;Sell;Buy;Demand;;Supply;;Date;");
 
                 foreach (var station in StationDirectory)
@@ -906,11 +934,37 @@ namespace RegulatedNoise
                             cbExtendedInfoInCSV.Checked ? commodity.SourceFileName : ""
                         });
 
-                        if (cbExtendedInfoInCSV.Checked)
-                            writer.WriteLine(output + ";");
+                        // I'm sure that's not wanted vv
+                        //if (cbExtendedInfoInCSV.Checked)
+                        ///    writer.WriteLine(output + ";");
+                        
+                        writer.WriteLine(output + ";");
                     }
                 }
                 writer.Close();
+
+                // we delete the current file not until the new file is written without errors
+
+                if (force)
+                {
+                    // delete old backup
+                    if (File.Exists(backupFile))
+                        File.Delete(backupFile);
+
+                    // rename current file to old backup
+                    if (File.Exists(currentFile))
+                        File.Move(currentFile, backupFile);
+                }
+                else
+                {
+                    // delete existing file
+                    if (File.Exists(currentFile))
+                        File.Delete(currentFile);
+                }
+                    
+                // rename new file to current file
+                File.Move(newFile, currentFile);
+
             }
         }
 
@@ -1240,8 +1294,11 @@ namespace RegulatedNoise
 
         private void cbStation_SelectedIndexChanged(object sender, EventArgs e)
         {
-            //
+            if (_setCBSortingIsActive)
+                return;
+
             var dist = DistanceInLightYears(CombinedNameToSystemName(cbStation.SelectedItem.ToString()));
+
             if (dist < double.MaxValue)
                 lblLightYearsFromCurrentSystem.Text = "(" + String.Format("{0:0.00}", dist) + " light years)";
             else
@@ -1439,6 +1496,9 @@ namespace RegulatedNoise
 
         private void cbCommodity_SelectedIndexChanged(object sender, EventArgs e)
         {
+            if (_setCBSortingIsActive)
+                return;
+
             lbCommodities.Items.Clear();
             foreach (var row in CommodityDirectory[(((ComboBox)sender).SelectedItem.ToString())].Where(x => !checkboxLightYears.Checked || Distance(CombinedNameToSystemName(x.SystemName))))
             {
@@ -2887,11 +2947,17 @@ namespace RegulatedNoise
         #region Station-To-Station
         private void cbStationToStationFrom_SelectedIndexChanged(object sender, EventArgs e)
         {
+            if (_setCBSortingIsActive)
+                return;
+
             UpdateStationToStation();
         }
 
         private void cbStationToStationTo_SelectedIndexChanged(object sender, EventArgs e)
         {
+            if (_setCBSortingIsActive)
+                return;
+
             UpdateStationToStation();
         }
 
@@ -3414,6 +3480,10 @@ namespace RegulatedNoise
         {
             RegulatedNoiseSettings.CheckVersion();
 
+#if DukeJones
+            RegulatedNoiseSettings.CheckVersion2();            
+#endif
+            
             Text += RegulatedNoiseSettings.Version.ToString(CultureInfo.InvariantCulture);
 
             if (((DateTime.Now.Day == 24 || DateTime.Now.Day == 25 || DateTime.Now.Day == 26) &&
@@ -3749,6 +3819,9 @@ namespace RegulatedNoise
 
         private void cbIncludeWithinRegionOfStation_SelectedIndexChanged(object sender, EventArgs e)
         {
+            if (_setCBSortingIsActive)
+                return;
+
             SetupGui();
         }
 
@@ -4026,6 +4099,53 @@ namespace RegulatedNoise
                 tabControl1.TabPages.RemoveByKey("tabEDDN");
             }
         }
+
+        public void setOCRCalibrationTabVisibility()
+        {
+            TabPage OCRTabPage;
+            OcrCalibratorTab TabControl;
+
+            if (GameSettings != null && tabControl3.TabPages["OCR_Calibration"] != null)
+            {
+                OCRTabPage = tabControl3.TabPages["OCR_Calibration"];
+                OCRTabPage.Enabled = (GameSettings.Display != null);
+                TabControl = (OcrCalibratorTab)(OCRTabPage.Controls[0]);
+                TabControl.lblWarning.Visible = (GameSettings.Display == null); 
+            }
+        }
+
+        private void cbSortingComboboxes_CheckedChanged(object sender, EventArgs e)
+        {
+            RegulatedNoiseSettings.SortingComboboxes = cbSortingComboboxes.Checked;
+            applyComboboxSetting();
+        }
+
+        /// <summary>
+        /// sets the sorting property of the commodity comboboxes
+        /// </summary>
+        private void applyComboboxSetting()
+        {
+            try
+            {
+                _setCBSortingIsActive = true;
+
+                cbIncludeWithinRegionOfStation.Sorted = RegulatedNoiseSettings.SortingComboboxes;
+                cbStation.Sorted = RegulatedNoiseSettings.SortingComboboxes;
+                cbCommodity.Sorted = RegulatedNoiseSettings.SortingComboboxes;
+                cbStationToStationFrom.Sorted = RegulatedNoiseSettings.SortingComboboxes;
+                cbStationToStationTo.Sorted = RegulatedNoiseSettings.SortingComboboxes;
+
+                _setCBSortingIsActive = false;
+
+            }
+            catch (Exception ex)
+            {
+
+                _setCBSortingIsActive = false;
+            }
+        }
+
     }
+
 
 }

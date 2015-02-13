@@ -99,16 +99,44 @@ namespace RegulatedNoise
 
         public void SaveLog(bool force = false)
         {
-            string fileName;
+            string newFile, backupFile, currentFile;
+
             if (force)
-                fileName = "CommandersLogAutoSave.xml";
+                currentFile = "CommandersLogAutoSave.xml";
             else
-                fileName ="Commander's Log Events to "+DateTime.Now.ToString("yyyy-MM-dd HH-mm-ss")+".xml";
-            if (!File.Exists(fileName)) File.Delete(fileName);
-            Stream stream =new FileStream(fileName, FileMode.Create, FileAccess.Write, FileShare.None);
+                currentFile = "Commander's Log Events to " + DateTime.Now.ToString("yyyy-MM-dd HH-mm-ss") + ".xml";
+
+            newFile     = String.Format("{0}_new{1}", Path.GetFileNameWithoutExtension(currentFile), Path.GetExtension(currentFile));
+            backupFile  = String.Format("{0}_bak{1}", Path.GetFileNameWithoutExtension(currentFile), Path.GetExtension(currentFile));
+
+            Stream stream = new FileStream(newFile, FileMode.Create, FileAccess.Write, FileShare.None);
             var x =new XmlSerializer(LogEvents.GetType());
             x.Serialize(stream, LogEvents);
             stream.Close();
+
+            // we delete the current file not until the new file is written without errors
+
+            if (force)
+            {
+                // delete old backup
+                if (File.Exists(backupFile))
+                    File.Delete(backupFile);
+
+                // rename current file to old backup
+                if (File.Exists(currentFile))
+                    File.Move(currentFile, backupFile);
+            }
+            else
+            {
+                // delete file if exists
+                if (File.Exists(currentFile))
+                    File.Delete(currentFile);
+
+            }
+
+            // rename new file to current file
+            File.Move(newFile, currentFile);
+
         }
 
         public void LoadLog(bool force = false)

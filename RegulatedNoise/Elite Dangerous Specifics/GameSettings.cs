@@ -13,28 +13,26 @@ namespace RegulatedNoise
     {
         public AppConfig AppConfig;
         public EdDisplayConfig Display;
-        
-        public GameSettings()
+        private DateTime lastTry_Displaydata = DateTime.Now - new TimeSpan(1,0,0);
+
+        public Form1 _parent;
+
+        public GameSettings(Form1 parent)
         {
-            try
-            {
-                //Load DisplaySettings from AppData
-                LoadDisplaySettings();
+            _parent = parent;
 
-                //Load AppConfig
-                LoadAppConfig();
+            //Load DisplaySettings from AppData
+            LoadDisplaySettings();
 
-                //Set up some filewatchers, If user changes config its reflected here
-                WatcherDisplaySettings();
-                WatcherAppDataSettings(); //Currently disabled as we only check Verbose logging and that cant be changed from the game
+            //Load AppConfig
+            LoadAppConfig();
 
-                //Check and Request for Verbose Logging
-                CheckAndRequestVerboseLogging();
-            }
-            catch (Exception ex)
-            {
-                cErr.processError(ex, "Error in GameSettings");
-            }
+            //Set up some filewatchers, If user changes config its reflected here
+            WatcherDisplaySettings();
+            WatcherAppDataSettings(); //Currently disabled as we only check Verbose logging and that cant be changed from the game
+
+            //Check and Request for Verbose Logging
+            CheckAndRequestVerboseLogging();
         }
 
         void CheckAndRequestVerboseLogging()
@@ -86,19 +84,35 @@ namespace RegulatedNoise
 
         void LoadAppConfig()
         {
-            try
-            {
-                var configFile = Path.Combine(Form1.RegulatedNoiseSettings.GamePath, "AppConfig.xml");
-                var serializer = new XmlSerializer(typeof(AppConfig));
-                using (var myFileStream = new FileStream(configFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            AppConfig locAppConfig;
+            TimeSpan delta;
+
+            DialogResult MBResult = DialogResult.Ignore;
+            string configFile = Path.Combine(Form1.RegulatedNoiseSettings.GamePath, "AppConfig.xml");
+            XmlSerializer serializer; 
+
+            do{
+
+                try
                 {
-                    AppConfig = (AppConfig)serializer.Deserialize(myFileStream);
+                    serializer = new XmlSerializer(typeof(AppConfig)); 
+                    using (var myFileStream = new FileStream(configFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                    {
+                        locAppConfig = (AppConfig)serializer.Deserialize(myFileStream);
+                        AppConfig = locAppConfig;
+                    }
                 }
-            }
-            catch (Exception ex)
-            {
-                throw new Exception("Error in LoadAppConfig()", ex);
-            }
+                catch (Exception ex)
+                {
+
+                    if (AppConfig == null)
+                    {
+                        // ignore if it was loaded before
+                        cErr.processError(ex, String.Format("Error while loading ED-Appconfig from file <{0}>", configFile));
+                    }
+
+                }
+            } while (MBResult == DialogResult.Retry);
                 
         }
 
@@ -116,6 +130,11 @@ namespace RegulatedNoise
 
         void LoadDisplaySettings()
         {
+            
+            TimeSpan delta;
+            DialogResult MBResult = DialogResult.Ignore;
+            EdDisplayConfig locDisplay;
+
             var configFile = Path.Combine(Form1.RegulatedNoiseSettings.ProductAppData, "Graphics" ,"DisplaySettings.xml");
             if (!File.Exists(configFile))
             {
@@ -123,25 +142,40 @@ namespace RegulatedNoise
             }
             var serializer = new XmlSerializer(typeof(EdDisplayConfig));
 
-            try
+
+            do
             {
-                using (var myFileStream = new FileStream(configFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                try
                 {
-                    Display = (EdDisplayConfig)serializer.Deserialize(myFileStream);
+                    using (var myFileStream = new FileStream(configFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                    {
+                        locDisplay = (EdDisplayConfig)serializer.Deserialize(myFileStream);
+                        Display = locDisplay;
+                    }
                 }
-            }
-            catch (Exception ex)
+                catch (Exception ex)
+                {
+                    if (Display == null)
+                    {
+                        // ignore this if it was loaded short before
+                        delta = DateTime.Now - lastTry_Displaydata;
+                        if (delta.TotalMilliseconds > 1000)
+                        {
+                            // ignore this if it was asked before
+                            MBResult = MessageBox.Show(String.Format("Error while loading ED-Displaysettings from file <{0}>", configFile), "Problem while loading data...", MessageBoxButtons.AbortRetryIgnore, MessageBoxIcon.Exclamation, MessageBoxDefaultButton.Button3);
+                            if (MBResult == DialogResult.Abort)
+                            {
+                                cErr.processError(ex, "Error in AppData_Changed()", true);
+                            }
+                            lastTry_Displaydata = DateTime.Now;
+                        }
+                    }
+                }
+            } while (MBResult == DialogResult.Retry);
+
+            if (_parent != null)
             {
-                if (ex.GetBaseException().HResult == (int)-2146232000)
-                {
-                    // System.Xml.XmlException : no root element (ED is rewriting the file sometimes ?) - ignore
-                    return;
-                }
-                else
-                {
-                    cErr.processError(ex, "Error in Function \"LoadDisplaySettings\"");
-                }
-                
+                _parent.setOCRCalibrationTabVisibility();
             }
         }
 
