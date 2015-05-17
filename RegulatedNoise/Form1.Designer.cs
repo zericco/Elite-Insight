@@ -4991,8 +4991,6 @@
         private System.Windows.Forms.Label label58;
         private System.Windows.Forms.TextBox txtSystemName;
         private System.Windows.Forms.Label label57;
-        private System.Windows.Forms.TextBox txtSystemId;
-        private System.Windows.Forms.Label label56;
         private System.Windows.Forms.TextBox txtSystemUpdatedAt;
         private System.Windows.Forms.Label label63;
         private System.Windows.Forms.ComboBox_ro cmbSystemPrimaryEconomy;

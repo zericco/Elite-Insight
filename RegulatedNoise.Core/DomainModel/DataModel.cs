@@ -38,14 +38,14 @@ namespace RegulatedNoise.Core.DomainModel
 			}
 		}
 
-		private Universe _universe;
-		public Universe Universe
+		private StarMap _starMap;
+		public StarMap StarMap
 		{
 			get
 			{
-				if (_universe == null)
-					_universe = new Universe();
-				return _universe;
+				if (_starMap == null)
+					_starMap = new StarMap();
+				return _starMap;
 			}
 		}
 
@@ -84,21 +84,6 @@ namespace RegulatedNoise.Core.DomainModel
 				{
 					Trace.TraceError("validation notification failure: " + ex);
 				}
-		}
-	}
-
-	public interface IValidator<in TEntity>
-	{
-		PlausibilityState Validate(TEntity entity);
-	}
-
-	public class ValidationEventArgs : EventArgs
-	{
-		public readonly PlausibilityState PlausibilityState;
-
-		public ValidationEventArgs(PlausibilityState plausibilityState)
-		{
-			PlausibilityState = plausibilityState;
 		}
 	}
 }

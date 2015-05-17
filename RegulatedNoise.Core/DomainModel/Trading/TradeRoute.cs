@@ -1,10 +1,7 @@
 ﻿using System;
 using RegulatedNoise.Annotations;
-using RegulatedNoise.Core.DomainModel;
-using RegulatedNoise.EDDB_Data;
-using RegulatedNoise.Enums_and_Utility_Classes;
 
-namespace RegulatedNoise.Trading
+namespace RegulatedNoise.Core.DomainModel.Trading
 {
     public struct TradeRoute
     {

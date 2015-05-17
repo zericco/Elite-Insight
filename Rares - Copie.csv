@@ -1,0 +1,112 @@
+MAX CAP;SUPPLY RATE;PRICE;ITEM;DIST(Ls);STATION;SYSTEM
+17 t;1-15 t;924 cr;Tauri Chimes;991.00;Porta;39 Tauri
+7 t;4 t;2654 cr;Aepyornis Egg;600,000.00;Glushko Station;47 Ceti
+12 t;11 t;1675 cr;Ceti Rabbits;600,000.00;Kaufmanis Hub;47 Ceti
+14 t;0-9 t;1283 cr;Chateau De Aegaeon;11,655.00;Schweikart Station;Aegaeon
+15 t;3-15 t;621 cr;Edan Apples of Aerial;180.00;Andrade Legacy;Aerial
+4 t;4 t;8966 cr;Aganippe Rush;133.00;Julian Market;Aganippe
+14 t;9-14 t;1421 cr;Alacarakmo Skin Art;16.00;Weyl Gateway;Alacarakmo
+7 t;1-6 t;3319 cr;Centauri Mega Gin;6,942,672.00;Hutton Oribtal;Alpha Centauri
+22 t;2-22 t;489 cr;Altairian Skin;661.00;Solo Orbiter;Altair
+16 t;2-7 t;454 cr;Alya Body Soup;540,000.00;Malaspina Gateway;Alya
+16 t;0-11 t;891 cr;Anduliga Fire Works;626,220.00;Celsius Estate;Anduliga
+11 t;2-11 t;1790 cr;Any Na Coffee;581.00;Libby Orbital;Any Na
+12 t;1-6 t;1191 cr;Arouca Conventula Sweets;410.00;Shipton Orbital;Arouca
+5 t;1-5 t;6442 cr;Az Cancri Formula 42;16.00;Fisher Station;AZ Cancri
+18 t;2-10 t;825 cr;Baltha'sine Vacuum Krill;356.00;Baltha'sine Station;Baltah'Sine
+18 t;ND;634 cr;Banki Amphibious Leather;531,869.00;Antonio De Andrade Vista;Banki
+10 t;4-5 t;1089 cr;Bast Snake Gin;202.00;Hart Station;Bast
+11 t;3-6 t;364 cr;Belalans Ray Leather;77.60;Boscovich Ring;Belalans
+12 t;5-11 t;2373 cr;CD-75 Kitten Brand Coffee;339.00;Kirk Dock;CD-75 661
+3 t;2-3 t;12550 cr;Cherbones Blood Crystals;576,740.00;Chalker Landing;Cherbones
+18 t;5-12 t;790 cr;Chi Eridani Marine Paste;2,181.00;Steve Masters station;Chi Eridani
+20 t;4-14 t;255 cr;Coquim Spongiform Victuals;606.00;Hirayama Installation;Coquim
+15 t;2-8 t;315 cr;Damna Carapaces;2,532.00;Nemere Market;Damna
+13 t;11 t;7420 cr;Motrona Experience Jelly;1,700,000.00;Pinzon Dock;Dea Motrona
+17 t;2-17 t;211 cr;Delta Phoenicis Palms;3,799.00;Trading post;Delta Phoenicis
+7 t;2-5 t;1892 cr;Deuringas Truffles;798.00;Shukor Hub;Deuringas
+15 t;1-10 t;340 cr;Diso Ma Corn;284.00;Shifnalport;Diso
+13 t;2-4 t;863 cr;Eleu Thermals;333.00;Finney Dock;Eleu
+11 t;3-9 t;978 cr;Indi Bourbon;143.00;Mansfield Orbiter;Epsilon Indi
+8 t;1-7 t;1633 cr;Eranin Whiskey;297.00;Azeban City;Eranin
+9 t;1-6 t;2050 cr;Eshu Umbrellas;1,742.00;Shajn Terminal;Eshu
+10 t;1-10 t;2450 cr;Esuseku Caviar;276.00;Savinykh Orbital;Esuseku
+7 t;1-7 t;3308 cr;Ethgreze Tea Buds;351.00;Bloch Station;Ethgreze
+10 t;2-10 t;992 cr;Fujin Tea;559.00;Futen Spaceport;Fujin
+26 t;26 t;1022 cr;Geawen Dance Dust;426,261.00;Obruchev Legacy;Geawen
+9-17 t;3-17 t;1827 cr;Pantaa Prayer Sticks;45.00;Zamka Platform;George Pantazis
+22 t;9-22 t;456 cr;Gerasian Gueuze Beer;1,052,931.00;Yurchikhin Port;Geras
+16 t;3-11 t;1451 cr;Goman Yaupon Coffee;291.00;Gustav Sporer Port;Goman
+15 t;1-8 t;1347 cr;Haidne Black Brew;561,080.00;Searfoss Enterprise;Haiden
+2 t;1-2 t;9636 cr;Havasupai Dream Catcher;601,314.00;Lovelace Port;Havasupai
+13 t;2-6 t;1190 cr;Live Hecate Sea Worms;570.00;RJH1972;Hecate
+8 t;1-6 t;1920 cr;Ceremonial Heike Tea;406.00;Brunel City;Heike
+6 t;1-3 t;3620 cr;Helvetitj Pearls;444.00;Friend Orbital;Helvetitj
+13 t;ND;2105 cr;HIP 10175 Bush Meat;4,850.00;Stefanyshyn-Piper Station;HIP 10175
+ND;ND;1488 cr;HIP Proto-Squid;536,714.00;Andersson Station;HIP 41181
+ND;13 t;806 cr;Burnham Bile Distillate;529,600.00;Burnham Beacon;HIP 59533
+19 t;1-18 t;385 cr;HIP Organophospates;2,632.00;Stasheff Colony;HIP 80364
+7 t;1-6 t;6518cr;Holva Duelling Blades;22,000.00;Kreutz Orbital;Holva
+16 t;1-14 t;415 cr;HR 7221 Wheat;1,886.00;Veron City;HR 7221
+12-16 t;2-7 t;1810 cr;Giant Irukama Snails;323.00;Blaauw City;Irukama
+6 t;1-6 t;12706 cr;Jaradharre Puzzle Box;526,178.00;Gohar Station;Jaradharre
+18 t;2-16 t;385 cr;Jaroua Rice;143.00;Mccool City;Jaroua
+32 t;4-24 t;1252 cr;Jotun Mookah;80.00;Icelock;Jotun (permit)
+10 t;2-9 t;473 cr;Kachirigin Filter Leeches;340.00;Nowak Orbital;Kachirigin
+6 t;1-4 t;5800 cr;Kamitra Cigars;82.00;Hammel Terminal;Kamitra
+12 t;1-8 t;2678 cr;Kamorin Historic Weapons;445.00;Godwin Vision;Kamorin
+5 t;2-5 t;5225 cr;Karetii Couture;990.00;Sinclair Platform;Karetii
+18 t;7-11 t;915 cr;Karsuki Locusts;28.00;West Market;Karsuki Ti
+3 t;1 t;7279 cr;Kinago Violins;1,723.00;Fozard Ring;Kinago
+16 t;1-12 t;595 cr;Kongga Ale;254.00;Laplace Ring;Kongga
+20 t;6-14 t;220 cr;Koro Kung Pellets;622,040.00;Lonchakov Orbital;Korro Kung
+7 t;4-7 t;3543 cr;Lavian Brandy;302.00;Lave Station;Lave
+7 t;3-5 t;1664 cr;Chameleon Cloth;54,480.00;Smith Reserve;LDS 883
+14 t;1-10 t;462 cr;Leestian Evil Juice;257.00;George Lucas;Leesti
+7 t;2-7 t;4164 cr;Azure Milk;257.00;George Lucas;Leesti
+ND;3-11 t;2357 cr;Void Extract Coffee;773,000.00;Ehrlich Orbital;LFT 1421
+13 t;13 t;1365 cr;Honesty Pills;514,700.00;King Gateway;LP 375-25
+8 t;ND;1345 cr;Mechucos High Tea;534,137.00;Brandenstein Port;Mechucos
+18 t;18 t;416 cr;Medb starlube;1,686,844.00;Vela dock;Medb
+7 t;1-3 t;2681 cr;Mokojing Beast Feast;539,400.00;Noli Terminal;Mokojing
+7 t;3-7 t;1836 cr;Momus Bog Spaniel;413.00;Tartarus Point;Momus Reach
+15 t;3-5 t;654 cr;Mukusubii Chitin-os;505,430.00;Ledyard Dock;Mukusubii
+19 t;11-19 t;86 cr;Mulachi Giant Fungus;594,550.00;Clark Terminal;Mulachi
+13 t;6-7 t;850 cr;Neritus Berries;524.00;Toll Ring;Neritus
+10 t;3-5t;16028 cr;Ngandandari Fire Opals;502,357.00;Consolmagno Horizons;Ngadandari
+18 t;2-9 t;930 cr;Nguna Modern Antiques;1,870.00;Biggle Hub;Nguna
+ND;ND;17000 cr;Soontill Relics;1,265.00;Cheranovsky City;Ngurii
+ND;7 t;650 cr;Njangari Saddles;21,400.00;Lee Hub;Njangari
+14 t;1-9 t;998 cr;Ochoeng Chillies;484.00;Roddenberry Gateway;Ochoeng
+16 t;6-10 t;533 cr;Orrerian Vicious Brew;963.00;Sharon Lee Free Market;Orrere
+6 t;1-2 t;6,552;Giant Verrix;85.00;Greeboski's Outpost;Phiagre
+10 t;1-6 t;2538 cr;Albino Quechua Mammoth Meat;120.00;Crown Ring;Quechua
+16-27 t;6-27 t;682 cr;Rajukru Multi-Stoves;117.00;Snyder Terminal;Rajukru
+11 t;5-6 t;550 cr;Rapa Bao Snake Skins;2,338.00;Flagg Gateway;Rapa Bao
+10 t;3-5 t;5810 cr;Rusani Old Smokey;72.00;Fernandes Market;Rusani
+17 t;1-17 t;860 cr;Sanuma Decorative Meat;6,000.00;Dunyach Gateway;Sanuma
+6 t;4-6 t;3710 cr;Waters of Shintara;347.00;Jameson Memorial;Shinrarta Dezhra (permit)
+8 t;3-8 t;815 cr;Lucan Onion Head;414.00;Cassie-L-Peia;Tanmark
+9 t;1-5 t;1814 cr;Tanmark Tranquil Tea;414.00;Cassie-L-Peia;Tanmark
+8 t;1-7 t;1056 cr;Tarach Spice;359.00;Tranquillity;Tarach Tor
+24 t;ND;7824 cr;Terra Mater Blood Bores;504.00;Gr8minds;Terra Mater (permit)
+11 t;1 t;925 cr;Thrutis Cream;288.00;Kingsbury Dock;Thrutis
+16 t;9 t;1153 cr;Tiolce Waste 2 Paste;158.00;Gordon Terminal;Tiolce
+18 t;2-14 t;539 cr;Toxandji Virocide;7,000.00;Tsunenaga Orbital (black market available at Alvares Dock - 7300 Ls);Toxandji
+14 t;3-14 t;965 cr;Uszaian Tree Grub;4,350.00;Guest Installation;Uszaa
+15 t;3-10 t;1795 cr;Utgaroar Millennial Eggs;171.00;Fort Klarix;Utgaroar
+7 t;4-7 t;8496 cr;Uzumoku Low-G Wings;505,300.00;Sevrdup Ring;Uzumoku
+20 t;2-15 t;160 cr;V Herculis Body Rub;1,233,592.00;Kaku Plant;V1090 Herculis
+10 t;3-10 t;615 cr;Vanayequi Ceratomorpha Fur;81.00;Clauss Hub;Vanayequi
+8 t;2-6 t;2398 cr;Vega Slimweed;1,100.00;Taylor City;Vega (permit)
+5 t;2 t;6771 cr;Vidavantian Lace;556,882.00;Lee Mines;Vidavanta
+6 t;3 t;3262 cr;Volkhab Bee Drones;408.00;Vernadsky Dock;Volkhab
+19 t;5-10 t;262 cr;Wheemete Wheat Cakes;551,628.00;Eisinga Enterprise;Wheemete
+9 t;2-5 t;4520 cr;Witchhaul Kobe Beef;219.00;Hornby Terminal;Witchhaul
+13 t;1-10 t;712 cr;Wolf Fesh;415.00;Saunders's Dive;Wolf 1301
+10 t;ND;1175 cr;Wulpa Hyperbore Systems;28.00;Williams Gateway;Wulpa
+17 t;1-16 t;420 cr;Wuthielo Ku Froth;145.00;Tarter Dock;Wuthielo Ku
+10 t;3-10 t;4482 cr;Xihe Biomorphic Companions;1,965.00;Zhen Dock;Xihe
+5t;1 t;6060 cr;Yaso Kondi Leaf;114.00;Wheeler Market;Yaso Kondi
+1 t;1 t;24590 cr;Leathery Eggs;400.00;Ridley Scott;Zaonce
+18 t;1-18 t;374 cr;Zeessze Ant Grub Glue;489.00;Nicollier Hanger;Zeessze

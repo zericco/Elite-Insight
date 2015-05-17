@@ -114,17 +114,17 @@
     </Compile>
     <Compile Include="EDDB_Data\EDCommodities.cs" />
     <Compile Include="EDDB_Data\EDCategory.cs" />
-    <Compile Include="EDDB_Data\EDCommodityListView.cs">
+    <Compile Include="EDDB_Data\CommodityListView.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="EDDB_Data\EDCommodityListView.Designer.cs">
-      <DependentUpon>EDCommodityListView.cs</DependentUpon>
+    <Compile Include="EDDB_Data\CommodityListView.Designer.cs">
+      <DependentUpon>CommodityListView.cs</DependentUpon>
     </Compile>
-    <Compile Include="EDDB_Data\EDCommodityView.cs">
+    <Compile Include="EDDB_Data\CommodityView.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="EDDB_Data\EDCommodityView.Designer.cs">
-      <DependentUpon>EDCommodityView.cs</DependentUpon>
+    <Compile Include="EDDB_Data\CommodityView.Designer.cs">
+      <DependentUpon>CommodityView.cs</DependentUpon>
     </Compile>
     <Compile Include="EDDB_Data\EddbDataProvider.cs" />
     <Compile Include="EDDB_Data\EddnMessage.cs" />
@@ -273,16 +273,15 @@
       <DependentUpon>TestTab.cs</DependentUpon>
     </Compile>
     <Compile Include="Trading\TradeEngine.cs" />
-    <Compile Include="Trading\TradeRoute.cs" />
     <Compile Include="Webserver.cs" />
     <EmbeddedResource Include="Brainerous Pixeltest\EBPixeltest.resx">
       <DependentUpon>EBPixeltest.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="EDDB_Data\EDCommodityListView.resx">
-      <DependentUpon>EDCommodityListView.cs</DependentUpon>
+    <EmbeddedResource Include="EDDB_Data\CommodityListView.resx">
+      <DependentUpon>CommodityListView.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="EDDB_Data\EDCommodityView.resx">
-      <DependentUpon>EDCommodityView.cs</DependentUpon>
+    <EmbeddedResource Include="EDDB_Data\CommodityView.resx">
+      <DependentUpon>CommodityView.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="EDDB_Data\EDStationView.resx">
       <DependentUpon>EDStationView.cs</DependentUpon>
@@ -330,8 +329,6 @@
     <EmbeddedResource Include="TestTab\TestTab.resx">
       <DependentUpon>TestTab.cs</DependentUpon>
     </EmbeddedResource>
-    <None Include="bin\Debug DJ\OCR Correction Images\ff8384ca-c5e4-4642-a19a-0d1adc256018.png" />
-    <None Include="bin\Debug DJ\OCR Correction Images\fefa1584-8397-48a7-9a96-759ea434b412.png" />
     <Content Include="Brainerous\bz2.pyd">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -793,9 +790,6 @@
     </None>
     <EmbeddedResource Include="Resources\m.png" />
     <Compile Include="Enums and Utility Classes\enumBindTo.cs" />
-    <Content Include="Json\Bin\Net45\Newtonsoft.Json.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
     <None Include="Resources\SampleTooHigh.png" />
     <None Include="Resources\SampleTooLow.png" />
     <None Include="Resources\PayPalDonate.jpg" />

@@ -32,9 +32,9 @@ namespace RegulatedNoise.EDDB_Data
 		public void ImportData(DataModel model)
 		{
 			DownloadDataFiles();
-			ImportSystems(model.Universe);
+			ImportSystems(model.StarMap);
 			ImportCommodities(model.Commodities);
-			ImportStations(model.Universe);
+			ImportStations(model.StarMap);
 		}
 
 		private void ImportCommodities(Commodities commodities)
@@ -46,14 +46,14 @@ namespace RegulatedNoise.EDDB_Data
 			}
 		}
 
-		private void ImportStations(Universe universe)
+		private void ImportStations(StarMap starMap)
 		{
 			if (File.Exists(EDDB_STATIONS_FULL_DATAFILE))
 			{
 				List<EDStation> eddbStations = ReadFile<List<EDStation>>(EDDB_STATIONS_FULL_DATAFILE);
 				foreach (EDStation eddbStation in eddbStations)
 				{
-					universe.Update(ToStation(eddbStation));
+					starMap.Update(ToStation(eddbStation));
 				}
 			}
 			else if (File.Exists(EDDB_STATIONS_LITE_DATAFILE))
@@ -109,13 +109,13 @@ namespace RegulatedNoise.EDDB_Data
 			}
 		}
 
-		private void ImportSystems(Universe universe)
+		private void ImportSystems(StarMap starMap)
 		{
 			List<EDSystem> eddbSystems = ReadFile<List<EDSystem>>(EDDB_SYSTEMS_DATAFILE);
 			foreach (EDSystem system in (IEnumerable<EDSystem>)eddbSystems)
 			{
 				_systemIdToNameMap.Add(system.Id, system.Name.ToCleanTitleCase());
-				universe.Update(ToStarSystem(system));
+				starMap.Update(ToStarSystem(system));
 			}
 		}
 

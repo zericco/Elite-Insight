@@ -5,13 +5,13 @@ using RegulatedNoise.Core.Helpers;
 
 namespace RegulatedNoise.Core.DomainModel
 {
-	public class Universe
+	public class StarMap
     {
         private readonly object _updating = new object();
 
         private readonly SystemCollection _systems;
 
-        public Universe()
+        public StarMap()
         {
             _systems = new SystemCollection();
         }

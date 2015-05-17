@@ -44,8 +44,14 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DomainModel\ILocalizer.cs" />
+    <Compile Include="DomainModel\IValidator.cs" />
+    <Compile Include="DomainModel\Trading\TradeRoute.cs" />
+    <Compile Include="DomainModel\ValidationEventArgs.cs" />
     <Compile Include="Helpers\EnumerableExtensions.cs" />
+    <Compile Include="Helpers\SerializationHelpers.cs" />
     <Compile Include="Helpers\StringExtensions.cs" />
+    <Compile Include="ICommodities.cs" />
     <Compile Include="Properties\Annotations.cs" />
     <Compile Include="DataProviders\TradeDangerousDataProvider.cs" />
     <Compile Include="DomainModel\Commodities.cs" />
@@ -59,7 +65,7 @@
     <Compile Include="DomainModel\Station.cs" />
     <Compile Include="DomainModel\StationCollection.cs" />
     <Compile Include="DomainModel\SystemCollection.cs" />
-    <Compile Include="DomainModel\Universe.cs" />
+    <Compile Include="DomainModel\StarMap.cs" />
     <Compile Include="DomainModel\UpdatableEntity.cs" />
     <Compile Include="DomainModel\UpdateMode.cs" />
     <Compile Include="Market.cs" />

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using RegulatedNoise.Core.DomainModel;
+using RegulatedNoise.Core.DomainModel.Trading;
 
 namespace RegulatedNoise.Trading
 {
