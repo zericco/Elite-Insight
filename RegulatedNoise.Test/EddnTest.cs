@@ -13,7 +13,7 @@ namespace RegulatedNoise.Test
         // activate only when build with NO_PATH_INIT set
         public void i_can_instantiate()
         {
-            using (var eddn = NewEddn()) ;
+			  using (var eddn = NewEddn()) { }
         }
 
         [TestMethod]
@@ -29,9 +29,9 @@ namespace RegulatedNoise.Test
             }
         }
 
-        private static EDDN NewEddn()
+        private static Eddn NewEddn()
         {
-            return new EDDN(ApplicationContext.CommoditiesLocalisation, ApplicationContext.RegulatedNoiseSettings) { TestMode = true };
+            return new Eddn(ApplicationContext.CommoditiesLocalisation, ApplicationContext.RegulatedNoiseSettings) { TestMode = true };
         }
     }
 }

@@ -136,7 +136,7 @@ namespace RegulatedNoise.EDDB_Data
 		{
 			EDStation retValue;
 
-			EDSystem SystemData = m_Systems[(int)DataSource.Data_Merged].Find(x => x.Name == systemName);
+				EDSystem SystemData = m_Systems[(int)DataSource.Data_Merged].Find(x => x.Name.Equals(systemName, StringComparison.InvariantCultureIgnoreCase));
 
 			if (SystemData != null)
 				retValue = m_Stations[(int)DataSource.Data_Merged].Find(x => x.SystemId == SystemData.Id && x.Name.Equals(stationName, StringComparison.InvariantCultureIgnoreCase));
@@ -498,7 +498,7 @@ namespace RegulatedNoise.EDDB_Data
 		{
 			List<EDStation> retValue;
 
-			EDSystem SystemData = m_Systems[(int)wantedSource].Find(x => x.Name == systemname);
+				EDSystem SystemData = m_Systems[(int)wantedSource].Find(x => x.Name.Equals(systemname, StringComparison.InvariantCultureIgnoreCase));
 
 			if (SystemData != null)
 				retValue = m_Stations[(int)wantedSource].FindAll(x => x.SystemId == SystemData.Id);
@@ -1144,7 +1144,7 @@ namespace RegulatedNoise.EDDB_Data
 		{
 			EDCommoditiesExt commodityData =
 				 GetCommodity(
-					  ApplicationContext.CommoditiesLocalisation.GetCommodityBasename(marketData.CommodityName));
+                    ApplicationContext.CommoditiesLocalisation.TranslateInEnglish(marketData.CommodityName));
 
 			if (marketData.CommodityName == "Panik")
 				Debug.Print("STOP");
@@ -1249,6 +1249,10 @@ namespace RegulatedNoise.EDDB_Data
 					plausibility = new PlausibilityState(false, "nor demand,nor supply provided");
 				}
 			}
+            else
+            {
+	            plausibility = new PlausibilityState(false, "unknown commodity");
+            }
 			return plausibility;
 		}
 

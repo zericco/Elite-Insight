@@ -16,6 +16,7 @@ using System.Security.Permissions;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Windows.Forms.DataVisualization.Charting;
 using CodeProject.Dialog;
@@ -69,9 +70,6 @@ namespace RegulatedNoise
 		private string _LoggedVisited = ID_NOT_SET;
 		private string _LoggedMarketData = ID_NOT_SET;
 
-		//Implementation of the new classlibrary
-		public EdSystem CurrentSystem;
-
 		private BindingSource _bs_Stations = new BindingSource();
 		private BindingSource _bs_StationsFrom = new BindingSource();
 		private BindingSource _bs_StationsTo = new BindingSource();
@@ -81,10 +79,10 @@ namespace RegulatedNoise
 
 		private Timer Clock;
 		private CommandersLogEvent m_RightMouseSelectedLogEvent = null;
-		private StarSystem m_loadedSystemdata = new EDSystem();
-		private EDSystem m_currentSystemdata = new EDSystem();
-		private EDStation m_loadedStationdata = new EDStation();
-		private EDStation m_currentStationdata = new EDStation();
+		private StarSystem m_loadedSystemdata;
+		private StarSystem m_currentSystemdata;
+		private Station m_loadedStationdata;
+		private Station m_currentStationdata;
 		private string m_lastSystemValue = String.Empty;
 		private string m_lastStationValue = String.Empty;
 		private Boolean m_SystemLoadingValues = false;
@@ -472,7 +470,8 @@ namespace RegulatedNoise
 			lbCommodities.Columns.Add("Demand Level");
 			lbCommodities.Columns.Add("Supply");
 			lbCommodities.Columns.Add("Supply Level");
-			lbCommodities.Columns.Add("Sample Date").Width = 150;
+			lbCommodities.Columns.Add("Sample Date").Width = 130;
+			lbCommodities.Columns.Add("distance");
 
 			lvAllComms.Columns.Add("Commodity Name").Width = 150;
 			lvAllComms.Columns.Add("Best Buy Price");
@@ -847,7 +846,6 @@ namespace RegulatedNoise
 		private void SaveCommodityData(bool force = false)
 		{
 			SaveFileDialog saveFile = new SaveFileDialog();
-			string newFile, backupFile, currentFile;
 
 			if (force)
 				saveFile.FileName = "AutoSave.csv";
@@ -861,15 +859,15 @@ namespace RegulatedNoise
 
 			if (force || saveFile.ShowDialog() == DialogResult.OK)
 			{
-				currentFile = saveFile.FileName;
-				newFile = String.Format("{0}_new{1}", Path.GetFileNameWithoutExtension(currentFile),
-					 Path.GetExtension(currentFile));
-				backupFile = String.Format("{0}_bak{1}", Path.GetFileNameWithoutExtension(currentFile),
-					 Path.GetExtension(currentFile));
+				var currentFile = saveFile.FileName;
+				var newFile = String.Format("{0}_new{1}", Path.GetFileNameWithoutExtension(currentFile),
+					Path.GetExtension(currentFile));
+				var backupFile = String.Format("{0}_bak{1}", Path.GetFileNameWithoutExtension(currentFile),
+					Path.GetExtension(currentFile));
 
 				var writer = new StreamWriter(File.OpenWrite(newFile));
 
-				writer.WriteLine("System;Station;Commodity;Sell;Buy;Demand;;Supply;;Date;");
+				writer.WriteLine("System;Station;Commodity;Sell;Buy;Demand;Demand Level;Supply;Supply Level;Date;Source");
 				foreach (MarketDataRow commodity in GalacticMarket)
 				{
 					// I'm sure that's not wanted vv
@@ -962,7 +960,7 @@ namespace RegulatedNoise
 
 				if (GalacticMarket.Update(marketData) != Market.UpdateState.Discarded)
 				{
-					if (postToEddn && cbPostOnImport.Checked && marketData.SystemName != "SomeSystem")
+					if (postToEddn && cbPostOnImport.Checked && ApplicationContext.Milkyway.SystemExists(marketData.SystemName))
 					{
 						ApplicationContext.Eddn.SendToEddn(marketData);
 					}
@@ -1245,12 +1243,12 @@ namespace RegulatedNoise
 			List<KeyValuePair<string, IEnumerable<MarketDataRow>>> selectionPreordered;
 
 			// get the relevant stations
-			var selectionRaw = GalacticMarket.StationIds.Where(IsSelected).Select(stationId => new KeyValuePair<string, IEnumerable<MarketDataRow>>(stationId, GalacticMarket.StationMarket(stationId))).Where(kvp => kvp.Value.Any()).ToList();
+			IEnumerable<KeyValuePair<string, IEnumerable<MarketDataRow>>> selectionRaw = GalacticMarket.StationIds.Where(IsInPerimeter).Select(stationId => new KeyValuePair<string, IEnumerable<MarketDataRow>>(stationId, GalacticMarket.StationMarket(stationId))).Where(kvp => kvp.Value.Any());
 
 			if (rbSortBySystem.Checked)
 			{
 				// get the list ordered as wanted -> order by system
-				selectionPreordered = selectionRaw.OrderBy(x => x.Key).ToList();
+				selectionPreordered = selectionRaw.OrderBy(x => MarketDataRow.StationIdToSystemName(x.Key)).ToList();
 				if (cblastVisitedFirst.Checked)
 				{
 					GetVisitedListPart(ref maxLength, lengthInfo1, selectionOrdered, selectionPreordered);
@@ -1535,8 +1533,10 @@ namespace RegulatedNoise
                             bestBuy, 
                             bestSell,
                             bestSell!= "" && bestBuy != "" ? (bestSellPrice-bestBuyPrice).ToString(CultureInfo.InvariantCulture) : "",
+									 row.SampleDate.ToString(CultureInfo.CurrentCulture),
                             row.Source
                         });
+						SetAgeColor(row.SampleDate, newItem.SubItems[10]);
 						newItem.UseItemStyleForSubItems = false;
 						if (bestBuy.Contains(stationName))
 						{
@@ -1574,7 +1574,7 @@ namespace RegulatedNoise
 
 		private static void SetAgeColor(DateTime sampleDate, ListViewItem.ListViewSubItem subItem)
 		{
-			double age = (sampleDate - DateTime.Now).TotalHours;
+			double age = (DateTime.Now - sampleDate).TotalHours;
 			if (age < 6)
 			{
 				subItem.ForeColor = Color.FromArgb(0, 68, 0);
@@ -1602,7 +1602,7 @@ namespace RegulatedNoise
 			bestBuy = "";
 			bestSell = "";
 
-			var commodityMarket = GalacticMarket.CommodityMarket(commodityName).Where(x => getStationSelection(x, !_InitDone));
+			var commodityMarket = GalacticMarket.CommodityMarket(commodityName).Where(x => IsInPerimeter(x, !_InitDone));
 			List<MarketDataRow> demandMarket = commodityMarket.Where(x => x.Stock > 0 && x.BuyPrice > 0).ToList();
 			buyers = demandMarket.Count();
 
@@ -1735,12 +1735,14 @@ namespace RegulatedNoise
 		private void cbCommodity_SelectedIndexChanged(object sender, EventArgs e)
 		{
 			object selectedCmbItem = ((ComboBox)sender).SelectedItem;
-			lbCommodities.Items.Clear();
 
+			lbCommodities.Items.Clear();
 			if (selectedCmbItem != null)
 			{
-				foreach (var row in GalacticMarket.CommodityMarket(selectedCmbItem.ToString()).Where(x => getStationSelection(x)))
+				lbCommodities.BeginUpdate();
+				foreach (MarketDataRow row in GalacticMarket.CommodityMarket(selectedCmbItem.ToString()).Where(x => IsInPerimeter(x)))
 				{
+					double distance = ApplicationContext.Milkyway.DistanceInLightYears(tbCurrentSystemFromLogs.Text, row.SystemName);
 					var viewItem = new ListViewItem(new string[] 
 					{   row.StationID,
 						row.SellPrice > 0 ? row.SellPrice.ToString(CultureInfo.InvariantCulture) : "",
@@ -1750,13 +1752,15 @@ namespace RegulatedNoise
 						row.Stock > 0 ? row.Stock.ToString(CultureInfo.InvariantCulture) : "",
 						row.SupplyLevel.Display(), 
 						row.SampleDate.ToString(CultureInfo.CurrentCulture) 
+						,distance != EDMilkyway.NO_DISTANCE ? Math.Round(distance,1).ToString(CultureInfo.CurrentCulture) : "N/A"
 					});
 					viewItem.UseItemStyleForSubItems = false;
 					SetAgeColor(row.SampleDate, viewItem.SubItems[7]);
 					lbCommodities.Items.Add(viewItem);
 				}
+				lbCommodities.EndUpdate();
 
-				var l = GalacticMarket.CommodityMarket(selectedCmbItem.ToString()).Where(x => x.BuyPrice > 0 && x.Stock > 0).Where(x => getStationSelection(x)).ToList();
+				var l = GalacticMarket.CommodityMarket(selectedCmbItem.ToString()).Where(x => x.BuyPrice > 0 && x.Stock > 0).Where(x => IsInPerimeter(x)).ToList();
 				if (l.Any())
 				{
 					lblMin.Text = l.Min(x => x.BuyPrice).ToString(CultureInfo.InvariantCulture);
@@ -1770,7 +1774,7 @@ namespace RegulatedNoise
 					lblAvg.Text = "N/A";
 				}
 
-				l = GalacticMarket.CommodityMarket(selectedCmbItem.ToString()).Where(x => x.SellPrice > 0 && x.Demand > 0).Where(x => getStationSelection(x)).ToList();
+				l = GalacticMarket.CommodityMarket(selectedCmbItem.ToString()).Where(x => x.SellPrice > 0 && x.Demand > 0).Where(x => IsInPerimeter(x)).ToList();
 				if (l.Any())
 				{
 					lblMinSell.Text = l.Min(x => x.SellPrice).ToString(CultureInfo.InvariantCulture);
@@ -1799,7 +1803,7 @@ namespace RegulatedNoise
 		{
 			if (lblMin.Text != "N/A")
 			{
-				var l = GalacticMarket.CommodityMarket(cbCommodity.SelectedItem.ToString()).Where(x => x.BuyPrice > 0).Where(x => getStationSelection(x)).ToList();
+				var l = GalacticMarket.CommodityMarket(cbCommodity.SelectedItem.ToString()).Where(x => x.BuyPrice > 0).Where(x => IsInPerimeter(x)).ToList();
 				var m = l.Where(x => x.BuyPrice == l.Min(y => y.BuyPrice));
 				MsgBox.Show(string.Join(", ", m.Select(x => x.StationID)));
 			}
@@ -1809,7 +1813,7 @@ namespace RegulatedNoise
 		{
 			if (lblMinSell.Text != "N/A")
 			{
-				var l = GalacticMarket.CommodityMarket(cbCommodity.SelectedItem.ToString()).Where(x => x.SellPrice > 0).Where(x => getStationSelection(x)).ToList();
+				var l = GalacticMarket.CommodityMarket(cbCommodity.SelectedItem.ToString()).Where(x => x.SellPrice > 0).Where(x => IsInPerimeter(x)).ToList();
 				var m = l.Where(x => x.SellPrice == l.Min(y => y.SellPrice));
 				MsgBox.Show(string.Join(", ", m.Select(x => x.StationID)));
 			}
@@ -1819,7 +1823,7 @@ namespace RegulatedNoise
 		{
 			if (lblMax.Text != "N/A")
 			{
-				var l = GalacticMarket.CommodityMarket(cbCommodity.SelectedItem.ToString()).Where(x => x.BuyPrice > 0).Where(x => getStationSelection(x)).ToList();
+				var l = GalacticMarket.CommodityMarket(cbCommodity.SelectedItem.ToString()).Where(x => x.BuyPrice > 0).Where(x => IsInPerimeter(x)).ToList();
 				var m = l.Where(x => x.BuyPrice == l.Max(y => y.BuyPrice));
 				MsgBox.Show(string.Join(", ", m.Select(x => x.StationID)));
 			}
@@ -1829,7 +1833,7 @@ namespace RegulatedNoise
 		{
 			if (lblMaxSell.Text != "N/A")
 			{
-				var l = GalacticMarket.CommodityMarket(cbCommodity.SelectedItem.ToString()).Where(x => x.SellPrice > 0).Where(x => getStationSelection(x)).ToList();
+				var l = GalacticMarket.CommodityMarket(cbCommodity.SelectedItem.ToString()).Where(x => x.SellPrice > 0).Where(x => IsInPerimeter(x)).ToList();
 				var m = l.Where(x => x.SellPrice == l.Max(y => y.SellPrice));
 				MsgBox.Show(string.Join(", ", m.Select(x => x.StationID)));
 			}
@@ -1860,7 +1864,7 @@ namespace RegulatedNoise
 
 			chart1.Series.Add(series1);
 
-			foreach (var price in GalacticMarket.CommodityMarket(senderName).Where(x => x.BuyPrice > 0 && x.Stock > 0).Where(x => getStationSelection(x)).OrderBy(x => x.BuyPrice))
+			foreach (var price in GalacticMarket.CommodityMarket(senderName).Where(x => x.BuyPrice > 0 && x.Stock > 0).Where(x => IsInPerimeter(x)).OrderBy(x => x.BuyPrice))
 			{
 				series1.Points.AddXY(price.StationID, price.BuyPrice);
 			}
@@ -1882,7 +1886,7 @@ namespace RegulatedNoise
 
 			chart2.Series.Add(series2);
 
-			foreach (var price in GalacticMarket.CommodityMarket(senderName).Where(x => x.SellPrice > 0 && x.Demand > 0).Where(x => getStationSelection(x)).OrderByDescending(x => x.SellPrice))
+			foreach (var price in GalacticMarket.CommodityMarket(senderName).Where(x => x.SellPrice > 0 && x.Demand > 0).Where(x => IsInPerimeter(x)).OrderByDescending(x => x.SellPrice))
 			{
 				series2.Points.AddXY(price.StationID, price.SellPrice);
 			}
@@ -2949,7 +2953,8 @@ namespace RegulatedNoise
 			{
 				if (s.Contains(";"))
 				{
-					ImportCsvString(s, true, true);
+					var marketDataRow = MarketDataRow.ReadCsv(s);
+					ImportMarketData(marketDataRow, true, true);
 				}
 			}
 			CommandersLog_MarketDataCollectedEvent(tbCurrentSystemFromLogs.Text, tbCurrentStationinfoFromLogs.Text);
@@ -3286,13 +3291,13 @@ namespace RegulatedNoise
 
 		private Tuple<IEnumerable<ListViewItem>, IEnumerable<ListViewItem>> GetBestRoundTripForTwoStations(string stationFrom, string stationTo, out int bestRoundTrip)
 		{
-			if (stationFrom == null || stationTo == null) { bestRoundTrip = 0; return null; }
 			Tuple<IEnumerable<TradeRoute>, IEnumerable<TradeRoute>> traderoutes = TradeEngine.GetBestRoundTripBetweenTwoStations(stationFrom, stationTo, out bestRoundTrip);
 			return new Tuple<IEnumerable<ListViewItem>, IEnumerable<ListViewItem>>(traderoutes.Item1.Select(BuildTradeRouteViewItem).ToList(), traderoutes.Item2.Select(BuildTradeRouteViewItem).ToList());
 		}
 
 		private ListViewItem BuildTradeRouteViewItem(TradeRoute route)
 		{
+			TimeSpan age = (DateTime.Now - route.Age);
 			var listViewItem = new ListViewItem(new string[]
 			{
 				route.CommodityName
@@ -3303,12 +3308,17 @@ namespace RegulatedNoise
 				, route.Demand.ToString(CultureInfo.InvariantCulture)
 				, route.DemandLevel.Display()
 				, route.Profit.ToString(CultureInfo.InvariantCulture)
-				, (DateTime.Now - route.Age).Hours.ToString(CultureInfo.CurrentCulture) + "h"
+				, Display(age)
 				, route.Distance.ToString(CultureInfo.InvariantCulture)
 			});
 			listViewItem.UseItemStyleForSubItems = false;
 			SetAgeColor(route.Age, listViewItem.SubItems[8]); // color profit according to age
 			return listViewItem;
+		}
+
+		private static string Display(TimeSpan age)
+		{
+			return age.TotalDays > 1 ? Math.Round(age.TotalDays).ToString(CultureInfo.CurrentCulture) + "d" : Math.Round(age.TotalHours).ToString(CultureInfo.CurrentCulture) + "h";
 		}
 
 		//private static ListViewItem BuildTradeRouteViewItem(MarketDataRow fromRow, MarketDataRow toRow)
@@ -3726,7 +3736,7 @@ namespace RegulatedNoise
 			_Splash.CloseDelayed();
 
 			loadSystemData(tbCurrentSystemFromLogs.Text);
-			loadStationData(tbCurrentSystemFromLogs.Text, tbCurrentStationinfoFromLogs.Text);
+			LoadStationData(tbCurrentSystemFromLogs.Text, tbCurrentStationinfoFromLogs.Text);
 
 			showSystemNumbers();
 
@@ -4018,99 +4028,37 @@ namespace RegulatedNoise
 			cbCommodity_SelectedIndexChanged(cbCommodity, new EventArgs());
 		}
 
-		private void btnBestRoundTrip_Click(object sender, EventArgs e)
+		private async void btnBestRoundTrip_Click(object sender, EventArgs e)
 		{
 			Cursor = Cursors.WaitCursor;
-
-			lbAllRoundTrips.Items.Clear();
-			int bestRoundTrip = -1;
-			ProgressView progress = new ProgressView();
-			List<Tuple<string, double>> allRoundTrips = new List<Tuple<string, double>>();
-
-			var selectedStations = GalacticMarket.StationIds.Where(IsSelected).ToList();
-
-			int total = (selectedStations.Count * (selectedStations.Count + 1)) / 2;
-			int current = 0;
-
-			progress.progressStart(string.Format("calculating best routes: {0} abilities from {1} stations", total, selectedStations.Count()));
-
-			for (int i = 0; i < selectedStations.Count - 1; i++)
-			{
-				for (int j = i + 1; j < selectedStations.Count; j++)
+			btnBestRoundTrip.Enabled = false;
+			var cancellationTokenSource = new CancellationTokenSource();
+			ProgressView progress = new ProgressView(cancellationTokenSource) { Text = "computing best round trips" };
+			TaskScheduler uiScheduler = TaskScheduler.FromCurrentSynchronizationContext();
+			progress.ProgressStart("");
+			await TradeEngine.GetBestRoundTripsAsync(
+				GalacticMarket.StationIds.Where(IsInPerimeter).ToList()
+				, cbMaxRouteDistance.Checked ? (double?)Double.Parse(cmbMaxRouteDistance.Text) : null
+				, cbPerLightYearRoundTrip.Checked
+				, progress.NewProgress()
+				, cancellationTokenSource.Token)
+				.ContinueWith(task =>
 				{
-					string stationFrom = selectedStations[i];
-					string stationTo = selectedStations[j];
-
-					current += 1;
-					progress.progressUpdate(current, total);
-					Debug.Print(current + "/" + total);
-					int bestThisTrip;
-					GetBestRoundTripForTwoStations(stationFrom, stationTo, out bestThisTrip);
-					if (bestThisTrip > 0)
+					lbAllRoundTrips.BeginUpdate();
+					lbAllRoundTrips.Items.Clear();
+					foreach (Tuple<string, double> roundTrip in task.Result.OrderByDescending(x => x.Item2))
 					{
-						string key1, key2;
-						if (String.Compare(stationFrom, stationTo) < 0)
-						{
-							key1 = stationFrom;
-							key2 = stationTo;
-						}
-						else
-						{
-							key1 = stationTo;
-							key2 = stationFrom;
-						}
-						string credits;
-						double creditsDouble;
-						double distance = 1d;
-
-						distance = ApplicationContext.Milkyway.DistanceInLightYears(MarketDataRow.StationIdToSystemName(stationFrom).ToUpper(), MarketDataRow.StationIdToSystemName(stationTo).ToUpper());
-
-						if (cbPerLightYearRoundTrip.Checked)
-						{
-							creditsDouble = bestThisTrip / (2.0 * distance);
-							credits = String.Format("{0:0.000}", creditsDouble / (2.0 * distance)) + " Cr/Ly";
-						}
-						else
-						{
-							creditsDouble = bestThisTrip;
-							credits = (bestThisTrip + " Cr");
-						}
-
-						if ((!cbMaxRouteDistance.Checked) || (double.Parse(cmbMaxRouteDistance.Text) >= distance))
-						{
-							allRoundTrips.Add(
-								  new Tuple<string, double>(
-										 credits.PadRight(13) + " :" +
-										 key1
-										 + "..." +
-										 key2
-										 , creditsDouble));
-
-							if (bestThisTrip > bestRoundTrip)
-							{
-								bestRoundTrip = bestThisTrip;
-							}
-						}
-
+						lbAllRoundTrips.Items.Add(roundTrip.Item1);
 					}
-
-					if (progress.Cancelled)
-						break;
-				}
-
-				if (progress.Cancelled)
-					break;
-			}
-
-			progress.progressStop();
-
-			var ordered = allRoundTrips.OrderByDescending(x => x.Item2).Select(x => x.Item1).Distinct().ToList().Cast<object>().ToArray();
-
-			lbAllRoundTrips.Items.AddRange(ordered);
-			if (lbAllRoundTrips.Items.Count > 0)
-				lbAllRoundTrips.SelectedIndex = 0;
-
-			this.Cursor = Cursors.Default;
+					if (lbAllRoundTrips.Items.Count > 0)
+					{
+						lbAllRoundTrips.SelectedIndex = 0;
+					}
+					lbAllRoundTrips.EndUpdate();
+					progress.Dispose();
+					btnBestRoundTrip.Enabled = true;
+					Cursor = Cursors.Default;
+				}, cancellationTokenSource.Token, TaskContinuationOptions.NotOnCanceled | TaskContinuationOptions.NotOnFaulted, uiScheduler);
 		}
 
 		private void checkboxLightYears_CheckedChanged(object sender, EventArgs e)
@@ -4138,7 +4086,7 @@ namespace RegulatedNoise
 
 		private void cmdPurgeEDDNData(object sender, EventArgs e)
 		{
-			GalacticMarket.RemoveAll(md => md.Source == EDDN.SOURCENAME);
+			GalacticMarket.RemoveAll(md => md.Source == Eddn.SOURCENAME);
 			SetupGui();
 		}
 
@@ -4155,35 +4103,36 @@ namespace RegulatedNoise
 
 		private void lbAllRoundTrips_SelectedIndexChanged(object sender, EventArgs e)
 		{
-			var t = lbAllRoundTrips.Text;
-			var fromStation = t.Substring(t.IndexOf(':') + 1);
-			fromStation = fromStation.Substring(0, fromStation.IndexOf("..."));
-			var toStation = t.Substring(t.IndexOf("...") + 3);
-
-			//            Debug.Print("v : " + fromStation + " / c:" + cmbStationToStationFrom.SelectedValue+ " / c:" + cmbStationToStationFrom.SelectedItem, cmbStationToStationFrom.SelectedIndex);
-			int fromIndex = -1;
-			int toIndex = -1;
-
-			if (!_StationIndices.TryGetValue(fromStation, out fromIndex))
-				fromIndex = -1;
-
-			if (!_StationIndices.TryGetValue(toStation, out toIndex))
-				toIndex = -1;
-
 			try
 			{
+				var t = lbAllRoundTrips.Text;
+				string fromStation = t.Substring(t.IndexOf(":") + 1);
+				fromStation = fromStation.Substring(0, fromStation.IndexOf("<")).Trim();
+				string toStation = t.Substring(t.LastIndexOf(">") + 1).Trim();
+
+				//            Debug.Print("v : " + fromStation + " / c:" + cmbStationToStationFrom.SelectedValue+ " / c:" + cmbStationToStationFrom.SelectedItem, cmbStationToStationFrom.SelectedIndex);
+				int fromIndex = -1;
+				int toIndex = -1;
+
+				if (!_StationIndices.TryGetValue(fromStation, out fromIndex))
+					fromIndex = -1;
+
+				if (!_StationIndices.TryGetValue(toStation, out toIndex))
+					toIndex = -1;
 				cmbStationToStationFrom.SelectedIndex = fromIndex;
 				cmbStationToStationTo.SelectedIndex = toIndex;
+
+				Debug.Print(
+					"n : " + fromStation + " / c:" + cmbStationToStationFrom.SelectedValue + " / c:" +
+					cmbStationToStationFrom.SelectedItem,
+					cmbStationToStationFrom.SelectedIndex);
+				Debug.Print("");
+				UpdateStationToStation();
 			}
 			catch (Exception ex)
 			{
-				throw ex;
+				_logger.Log("unable to update on roundTrip selection: " + ex, true);
 			}
-
-			Debug.Print("n : " + fromStation + " / c:" + cmbStationToStationFrom.SelectedValue + " / c:" + cmbStationToStationFrom.SelectedItem, cmbStationToStationFrom.SelectedIndex);
-			Debug.Print("");
-
-			UpdateStationToStation();
 		}
 
 		private void lvStationToStationReturn_ColumnClick(object sender, ColumnClickEventArgs e)
@@ -4864,7 +4813,7 @@ namespace RegulatedNoise
 				if ((newSystem || newLocation) && (!InitialRun))
 				{
 					loadSystemData(_LoggedSystem);
-					loadStationData(_LoggedSystem, _LoggedLocation);
+					LoadStationData(_LoggedSystem, _LoggedLocation);
 
 					if (cbAutoActivateSystemTab.Checked)
 						tabCtrlMain.SelectedTab = tabCtrlMain.TabPages["tabSystemData"];
@@ -4890,25 +4839,20 @@ namespace RegulatedNoise
 		/// </summary>
 		/// <param name="stationId">The station identifier.</param>
 		/// <returns></returns>
-		private bool IsSelected(string stationId)
+		private bool IsInPerimeter(string stationId)
 		{
-			return (!cbLimitLightYears.Checked || Distance(MarketDataRow.StationIdToSystemName(stationId))) &&
-						(!cbStationToStar.Checked || StationDistance(MarketDataRow.StationIdToSystemName(stationId), MarketDataRow.StationIdToStationName(stationId)));
-
+			string systemName = MarketDataRow.StationIdToSystemName(stationId);
+			return (!cbLimitLightYears.Checked || Distance(systemName))
+						&& (!cbStationToStar.Checked || StationDistance(systemName, MarketDataRow.StationIdToStationName(stationId)));
 		}
 
-		private bool getStationSelection(MarketDataRow x, bool noRestriction = false)
+		private bool IsInPerimeter(MarketDataRow x, bool noRestriction = false)
 		{
 			if (noRestriction)
 				return true;
 			else
 				return (!cbLimitLightYears.Checked || Distance(x.SystemName)) &&
 							(!cbStationToStar.Checked || StationDistance(x.SystemName, x.StationName));
-		}
-
-		private void label63_Click(object sender, EventArgs e)
-		{
-
 		}
 
 		#region System / Station Tab
@@ -4939,7 +4883,7 @@ namespace RegulatedNoise
 		{
 
 			loadSystemData(tbCurrentSystemFromLogs.Text);
-			loadStationData(tbCurrentSystemFromLogs.Text, tbCurrentStationinfoFromLogs.Text);
+			LoadStationData(tbCurrentSystemFromLogs.Text, tbCurrentStationinfoFromLogs.Text);
 
 			tabCtrlMain.SelectedTab = tabCtrlMain.TabPages["tabSystemData"];
 
@@ -4969,9 +4913,7 @@ namespace RegulatedNoise
 
 			if (m_loadedSystemdata != null)
 			{
-				m_currentSystemdata.getValues(m_loadedSystemdata, true);
-
-				txtSystemId.Text = m_loadedSystemdata.Id.ToString(CultureInfo.CurrentCulture);
+				m_currentSystemdata.UpdateFrom(m_loadedSystemdata, UpdateMode.Clone);
 				txtSystemName.Text = m_loadedSystemdata.Name;
 				txtSystemX.Text = m_loadedSystemdata.X.ToString("0.00000", CultureInfo.CurrentCulture);
 				txtSystemY.Text = m_loadedSystemdata.Y.ToString("0.00000", CultureInfo.CurrentCulture);
@@ -4979,7 +4921,7 @@ namespace RegulatedNoise
 				txtSystemFaction.Text = m_loadedSystemdata.Faction.NToString();
 				txtSystemPopulation.Text = m_loadedSystemdata.Population.ToNString("#,##0.", CultureInfo.CurrentCulture);
 				txtSystemUpdatedAt.Text = UnixTimeStamp.UnixTimeStampToDateTime(m_loadedSystemdata.UpdatedAt).ToString(CultureInfo.CurrentUICulture);
-				cbSystemNeedsPermit.CheckState = m_loadedSystemdata.NeedsPermit.toCheckState();
+				cbSystemNeedsPermit.CheckState = m_loadedSystemdata.NeedsPermit.ToCheckState();
 				cmbSystemPrimaryEconomy.Text = m_loadedSystemdata.PrimaryEconomy.NToString();
 				cmbSystemSecurity.Text = m_loadedSystemdata.Security.NToString();
 				cmbSystemState.Text = m_loadedSystemdata.State.NToString();
@@ -5004,22 +4946,20 @@ namespace RegulatedNoise
 					cmbStationStations.ReadOnly = false;
 				}
 
-				IEnumerable<EDStation> StationsInSystem = ApplicationContext.Milkyway.GetStations(systemname);
-				foreach (var Station in StationsInSystem)
+				IEnumerable<Station> stationsInSystem = ApplicationContext.Model.StarMap[systemname].Stations;
+				foreach (var station in stationsInSystem)
 				{
-					cmbStationStations.Items.Add(Station.Name);
+					cmbStationStations.Items.Add(station.Name);
 				}
 
-				lblStationCount.Text = StationsInSystem.Count().ToString();
+				lblStationCount.Text = stationsInSystem.Count().ToString();
 
 				cmbStationStations.SelectedIndex = 0;
 
 			}
 			else
 			{
-				m_currentSystemdata.clear();
-
-				txtSystemId.Text = Program.NULLSTRING;
+				m_currentSystemdata = null;
 				txtSystemName.Text = Program.NULLSTRING;
 				txtSystemX.Text = Program.NULLSTRING;
 				txtSystemY.Text = Program.NULLSTRING;
@@ -5033,24 +4973,18 @@ namespace RegulatedNoise
 				cmbSystemState.Text = Program.NULLSTRING;
 				cmbSystemAllegiance.Text = Program.NULLSTRING;
 				cmbSystemGovernment.Text = Program.NULLSTRING;
-
 				setSystemEditable(false);
-
 				cmdSystemNew.Enabled = true;
 				cmdSystemEdit.Enabled = false;
 				cmdSystemSave.Enabled = false;
 				cmdSystemCancel.Enabled = cmdSystemSave.Enabled;
-
 				cmdStationNew.Enabled = false;
 				cmdStationEdit.Enabled = false;
 				cmdStationSave.Enabled = false;
 				cmdStationCancel.Enabled = cmdStationSave.Enabled;
-
 				cmbSystemsAllSystems.ReadOnly = false;
-
 				txtSystemName.ReadOnly = true;
 				lblSystemRenameHint.Visible = false;
-
 				lblStationCount.Text = "-";
 			}
 
@@ -5058,7 +4992,7 @@ namespace RegulatedNoise
 
 		}
 
-		private void loadStationData(string Systemname, string Stationname, bool isNew = false)
+		private void LoadStationData(string systemname, string stationname, bool isNew = false)
 		{
 
 			m_StationLoadingValues = true;
@@ -5066,22 +5000,19 @@ namespace RegulatedNoise
 			if (isNew)
 			{
 				cmbStationStations.SelectedIndex = -1;
-				m_loadedStationdata = new EDStation();
-				m_loadedStationdata.Name = Stationname;
+				m_loadedStationdata = new Station(stationname);
 				m_StationIsNew = true;
 			}
 			else
 			{
-				cmbStationStations.SelectedItem = Stationname;
-				m_loadedStationdata = ApplicationContext.Milkyway.GetStation(Systemname, Stationname);
+				cmbStationStations.SelectedItem = stationname;
+				m_loadedStationdata = ApplicationContext.Milkyway.GetStation(systemname, stationname);
 				m_StationIsNew = false;
 			}
 
 			if (m_loadedStationdata != null)
 			{
-				m_currentStationdata.getValues(m_loadedStationdata, true);
-
-				txtStationId.Text = m_loadedStationdata.Id.ToString(CultureInfo.CurrentCulture);
+				m_currentStationdata.UpdateFrom(m_loadedStationdata, UpdateMode.Clone);
 				txtStationName.Text = m_loadedStationdata.Name;
 				cmbStationMaxLandingPadSize.Text = m_loadedStationdata.MaxLandingPadSize.NToString();
 				txtStationDistanceToStar.Text = m_loadedStationdata.DistanceToStar.ToNString();
@@ -5098,13 +5029,13 @@ namespace RegulatedNoise
 				foreach (string Economy in m_loadedStationdata.Economies)
 					lbStationEconomies.Items.Add(Economy);
 
-				cbStationHasCommodities.CheckState = m_loadedStationdata.HasCommodities.toCheckState();
-				cbStationHasBlackmarket.CheckState = m_loadedStationdata.HasBlackmarket.toCheckState();
-				cbStationHasOutfitting.CheckState = m_loadedStationdata.HasOutfitting.toCheckState();
-				cbStationHasShipyard.CheckState = m_loadedStationdata.HasShipyard.toCheckState();
-				cbStationHasRearm.CheckState = m_loadedStationdata.HasRearm.toCheckState();
-				cbStationHasRefuel.CheckState = m_loadedStationdata.HasRefuel.toCheckState();
-				cbStationHasRepair.CheckState = m_loadedStationdata.HasRepair.toCheckState();
+				cbStationHasCommodities.CheckState = m_loadedStationdata.HasCommodities.ToCheckState();
+				cbStationHasBlackmarket.CheckState = m_loadedStationdata.HasBlackmarket.ToCheckState();
+				cbStationHasOutfitting.CheckState = m_loadedStationdata.HasOutfitting.ToCheckState();
+				cbStationHasShipyard.CheckState = m_loadedStationdata.HasShipyard.ToCheckState();
+				cbStationHasRearm.CheckState = m_loadedStationdata.HasRearm.ToCheckState();
+				cbStationHasRefuel.CheckState = m_loadedStationdata.HasRefuel.ToCheckState();
+				cbStationHasRepair.CheckState = m_loadedStationdata.HasRepair.ToCheckState();
 
 				setStationEditable(isNew);
 
@@ -5114,13 +5045,12 @@ namespace RegulatedNoise
 					cmdStationEdit.Enabled = true;
 					cmdStationSave.Enabled = false;
 					cmdStationCancel.Enabled = cmdStationSave.Enabled;
-
 					cmbStationStations.ReadOnly = false;
-
 				}
 
-				if (ApplicationContext.Milkyway.GetStations().Any(x => (x.Source == EddbDataProvider.SOURCENAME && x.Name.Equals(m_loadedStationdata.Name, StringComparison.InvariantCultureIgnoreCase)) &&
-																																			(x.SystemId == m_loadedStationdata.SystemId)))
+				if (ApplicationContext.Model.StarMap[m_loadedStationdata.System]
+					.Stations.Any(x => x.Source == EddbDataProvider.SOURCENAME 
+										&& x.Name.Equals(m_loadedStationdata.Name, StringComparison.InvariantCultureIgnoreCase)))				
 				{
 					txtStationName.ReadOnly = true;
 					lblStationRenameHint.Visible = true;
@@ -5134,7 +5064,7 @@ namespace RegulatedNoise
 			}
 			else
 			{
-				m_currentStationdata.clear();
+				m_currentStationdata = null;
 
 				txtStationId.Text = Program.NULLSTRING;
 				txtStationName.Text = Program.NULLSTRING;
@@ -5473,15 +5403,17 @@ namespace RegulatedNoise
 				case "txtSystemName":
 					if (m_SystemIsNew)
 					{
-						EDSystem existing = ApplicationContext.Milkyway.GetSystems().FirstOrDefault(x => x.Name.Equals(txtSystemName.Text, StringComparison.InvariantCultureIgnoreCase));
+						StarSystem existing = ApplicationContext.Model.StarMap[txtSystemName.Text];
 						if (existing != null)
+						{
 							if (DateTime.Now.Subtract(m_SystemWarningTime).TotalSeconds > 5)
 							{
 								m_SystemWarningTime = DateTime.Now;
 								MsgBox.Show("A system with this name already exists", "Adding a new system", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
 							}
+						}
+						m_currentSystemdata = new StarSystem(txtSystemName.Text);
 					}
-					m_currentSystemdata.Name = txtSystemName.Text;
 
 					break;
 				case "txtSystemX":
@@ -5509,7 +5441,7 @@ namespace RegulatedNoise
 
 					break;
 				case "cbSystemNeedsPermit":
-					m_currentSystemdata.NeedsPermit = cbSystemNeedsPermit.toNInt();
+					m_currentSystemdata.NeedsPermit = cbSystemNeedsPermit.ToNBool();
 
 					break;
 				case "cmbSystemPrimaryEconomy":
@@ -5728,7 +5660,7 @@ namespace RegulatedNoise
 				}
 
 				loadSystemData(m_currentSystemdata.Name);
-				loadStationData(m_currentSystemdata.Name, txtStationName.Text);
+				LoadStationData(m_currentSystemdata.Name, txtStationName.Text);
 
 				showSystemNumbers();
 
@@ -5785,7 +5717,7 @@ namespace RegulatedNoise
 				setStationEditable(false);
 
 				loadSystemData(m_currentSystemdata.Name);
-				loadStationData(m_currentSystemdata.Name, m_currentStationdata.Name);
+				LoadStationData(m_currentSystemdata.Name, m_currentStationdata.Name);
 
 				showSystemNumbers();
 
@@ -5835,7 +5767,7 @@ namespace RegulatedNoise
 					cmbStationStations.ReadOnly = false;
 
 					loadSystemData(newSystemname, true);
-					loadStationData(newSystemname, "", false);
+					LoadStationData(newSystemname, "", false);
 				}
 			}
 		}
@@ -5874,7 +5806,7 @@ namespace RegulatedNoise
 					cmdStationSave.Enabled = true;
 					cmdStationCancel.Enabled = cmdStationSave.Enabled;
 
-					loadStationData(txtSystemName.Text, newStationname, true);
+					LoadStationData(txtSystemName.Text, newStationname, true);
 
 					cmbSystemsAllSystems.ReadOnly = true;
 
@@ -5907,7 +5839,7 @@ namespace RegulatedNoise
 		private void cmbStationStations_SelectedIndexChanged(object sender, EventArgs e)
 		{
 			if (!m_StationLoadingValues && !m_SystemLoadingValues)
-				loadStationData(txtSystemName.Text, cmbStationStations.Text);
+				LoadStationData(txtSystemName.Text, cmbStationStations.Text);
 		}
 
 		public delegate void delBoolean(bool value);
@@ -6117,10 +6049,10 @@ namespace RegulatedNoise
 
 		private void cmdTest_Click(object sender, EventArgs e)
 		{
-			this.cmbSystemsAllSystems.SelectedIndexChanged -= new EventHandler(this.cmbAllStations_SelectedIndexChanged);
+			this.cmbSystemsAllSystems.SelectedIndexChanged -= cmbAllStations_SelectedIndexChanged;
 			cmbSystemsAllSystems.SelectedIndex = -1;
 			cmbSystemsAllSystems.SelectedIndex = -1;
-			this.cmbSystemsAllSystems.SelectedIndexChanged += new EventHandler(this.cmbAllStations_SelectedIndexChanged);
+			this.cmbSystemsAllSystems.SelectedIndexChanged += cmbAllStations_SelectedIndexChanged;
 		}
 
 		private void cmbAllStations_SelectedIndexChanged(object sender, EventArgs e)
@@ -6128,7 +6060,7 @@ namespace RegulatedNoise
 			if (!m_SystemLoadingValues)
 			{
 				loadSystemData(cmbSystemsAllSystems.SelectedValue.ToString());
-				loadStationData(cmbSystemsAllSystems.SelectedValue.ToString(), "");
+				LoadStationData(cmbSystemsAllSystems.SelectedValue.ToString(), "");
 			}
 		}
 
@@ -6140,7 +6072,7 @@ namespace RegulatedNoise
 				cmbStationStations.ReadOnly = false;
 
 				loadSystemData(_oldSystemName);
-				loadStationData(_oldSystemName, _oldStationName);
+				LoadStationData(_oldSystemName, _oldStationName);
 			}
 		}
 
@@ -6152,7 +6084,7 @@ namespace RegulatedNoise
 				cmbStationStations.ReadOnly = false;
 
 				loadSystemData(_oldSystemName);
-				loadStationData(_oldSystemName, _oldStationName);
+				LoadStationData(_oldSystemName, _oldStationName);
 			}
 
 		}
@@ -6238,6 +6170,30 @@ namespace RegulatedNoise
 		private void llVisitUpdate_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
 		{
 			Process.Start(((LinkLabel)sender).Text);
+		}
+
+		private void btSelectCurrentAsOrigin_Click(object sender, EventArgs e)
+		{
+			if (cmbStationToStationFrom.Items.Count == 0)
+				return;
+			if (!String.IsNullOrEmpty(tbCurrentStationinfoFromLogs.Text) && !String.IsNullOrEmpty(tbCurrentSystemFromLogs.Text))
+			{
+				int listIndex;
+				_StationIndices.TryGetValue(tbCurrentStationinfoFromLogs.Text + " [" + tbCurrentSystemFromLogs.Text + "]", out listIndex);
+				cmbStationToStationFrom.SelectedIndex = listIndex;
+			}
+		}
+
+		private void btSelectCurrentAsTarget_Click(object sender, EventArgs e)
+		{
+			if (cmbStationToStationTo.Items.Count == 0)
+				return;
+			if (!String.IsNullOrEmpty(tbCurrentStationinfoFromLogs.Text) && !String.IsNullOrEmpty(tbCurrentSystemFromLogs.Text))
+			{
+				int listIndex;
+				_StationIndices.TryGetValue(tbCurrentStationinfoFromLogs.Text + " [" + tbCurrentSystemFromLogs.Text + "]", out listIndex);
+				cmbStationToStationTo.SelectedIndex = listIndex;
+			}
 		}
 	}
 }
