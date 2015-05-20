@@ -61,15 +61,21 @@ namespace RegulatedNoise.Core.DomainModel
 
 		public void UpdateMarket(MarketDataRow marketdata)
 		{
-			PlausibilityState plausibility = _marketDataValidator.Validate(marketdata);
+			PlausibilityState plausibility = Validate(marketdata);
 			if (plausibility.Plausible)
 			{
+				marketdata.CommodityName = _localizer.TranslateInEnglish(marketdata.CommodityName);
 				GalacticMarket.Update(marketdata);
 			}
 			else
 			{
 				RaiseValidationEvent(new ValidationEventArgs(plausibility));
 			}
+		}
+
+		public PlausibilityState Validate(MarketDataRow marketdata)
+		{
+			return _marketDataValidator.Validate(marketdata);
 		}
 
 		protected virtual void RaiseValidationEvent(ValidationEventArgs e)

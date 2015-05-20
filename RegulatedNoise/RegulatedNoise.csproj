@@ -217,7 +217,6 @@
     <Compile Include="Form1.Designer.cs">
       <DependentUpon>Form1.cs</DependentUpon>
     </Compile>
-    <Compile Include="Enums and Utility Classes\Levenshtein.cs" />
     <Compile Include="Elite Dangerous Specifics\GameSettings.cs" />
     <Compile Include="Help Forms\HelpCommodities.cs">
       <SubType>Form</SubType>

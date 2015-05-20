@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
-using Newtonsoft.Json;
 using RegulatedNoise.Core.Helpers;
 
 namespace RegulatedNoise.Core.DomainModel
@@ -47,13 +46,13 @@ namespace RegulatedNoise.Core.DomainModel
 
 		public Commodity this[string commodityName]
 		{
-			get { return _commodities[commodityName.ToCleanTitleCase()]; }
+			get { return _commodities[commodityName]; }
 		}
 
 		public Commodity TryGet(string commodityName)
 		{
 			Commodity commodity;
-			_commodities.TryGetValue(commodityName.ToCleanTitleCase(), out commodity);
+			_commodities.TryGetValue(GetBasename(commodityName.ToCleanTitleCase()), out commodity);
 			return commodity;
 		}
 

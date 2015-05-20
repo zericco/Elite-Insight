@@ -18,8 +18,6 @@ namespace RegulatedNoise.Core.DomainModel
 
 		public int Count { get { return _allMarketDatas.Count; } }
 
-		public bool IsReadOnly { get { return false; } }
-
 		public IEnumerable<string> StationIds
 		{
 			get
@@ -297,6 +295,11 @@ namespace RegulatedNoise.Core.DomainModel
 			{
 				return new CommodityMarket(marketDataRow.CommodityName);
 			}
+		}
+
+		public MarketDataRow FindMarketData(string text)
+		{
+			throw new NotImplementedException();
 		}
 	}
 

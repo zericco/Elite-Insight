@@ -13,7 +13,7 @@ using RegulatedNoise.Exceptions;
 namespace RegulatedNoise.EDDB_Data
 {
 
-	internal class EDMilkyway : IStarMap
+	internal class EDMilkyway
 	{
 		private const string EDDB_COMMODITIES_DATAFILE = @"./Data/commodities.json";
 		private const string REGULATEDNOISE_COMMODITIES_DATAFILE = @"./Data/commodities_RN.json";
@@ -63,36 +63,6 @@ namespace RegulatedNoise.EDDB_Data
 			m_Commodities = new List<EDCommoditiesExt>();
 			m_cachedLocations = new Dictionary<string, Point3D>();
 			m_cachedStationDistances = new Dictionary<string, int>();
-		}
-
-		IEnumerable<Station> IStarMap.GetStations(string systemName)
-		{
-			throw new NotImplementedException();
-		}
-
-		IEnumerable<StarSystem> IStarMap.GetSystems()
-		{
-			throw new NotImplementedException();
-		}
-
-		StarSystem IStarMap.GetSystem(string systemname)
-		{
-			throw new NotImplementedException();
-		}
-
-		Station IStarMap.GetStation(string systemname, string stationname)
-		{
-			throw new NotImplementedException();
-		}
-
-		public void ChangeAddSystem(StarSystem existing, string actual)
-		{
-			throw new NotImplementedException();
-		}
-
-		public void ChangeAddStation(string currentName, Station currentStationdata, string oldStationName)
-		{
-			throw new NotImplementedException();
 		}
 
 		/// <summary>
@@ -471,11 +441,6 @@ namespace RegulatedNoise.EDDB_Data
 		public string[] GetStationNames(string systemname)
 		{
 			return GetStations(systemname).Select(s => s.Name).ToArray();
-		}
-
-		IEnumerable<Station> IStarMap.GetStations()
-		{
-			throw new NotImplementedException();
 		}
 
 		/// <summary>
@@ -1254,11 +1219,6 @@ namespace RegulatedNoise.EDDB_Data
 	            plausibility = new PlausibilityState(false, "unknown commodity");
             }
 			return plausibility;
-		}
-
-		IEnumerable<Commodity> IStarMap.CloneCommodities()
-		{
-			throw new NotImplementedException();
 		}
 
 		public double DistanceInLightYears(string system1, string system2)

@@ -149,12 +149,7 @@ namespace RegulatedNoise.TestTab
 			foreach (MarketDataRow marketDataRow in marketDataRows)
 			{
 				cancellationToken.ThrowIfCancellationRequested();
-				var plausibility = ApplicationContext.Milkyway.IsImplausible(marketDataRow, true);
-				if (plausibility.Plausible)
-				{
-					marketDataRow.CommodityName = ApplicationContext.CommoditiesLocalisation.TranslateInEnglish(marketDataRow.CommodityName);
-					ApplicationContext.GalacticMarket.Update(marketDataRow);
-				}
+				ApplicationContext.Model.UpdateMarket(marketDataRow);
 				++processed;
 				onProgress.Report(new Tuple<string, int, int>("importing data...", processed, rows));
 			}
@@ -188,7 +183,7 @@ namespace RegulatedNoise.TestTab
 
 		private void btFindMarketData_Click(object sender, EventArgs e)
 		{
-			MarketDataRow marketData = ApplicationContext.GalacticMarket[tbFinderRequest.Text];
+			MarketDataRow marketData = ApplicationContext.Model.GalacticMarket.FindMarketData(tbFinderRequest.Text);
 			if (marketData == null)
 			{
 				tbFinderResult.Text = "N/A";

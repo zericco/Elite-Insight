@@ -16,14 +16,21 @@ namespace RegulatedNoise.Core.Helpers
 {
 	public static class SerializationHelpers
 	{
+		private static JsonSerializer _serializer;
 		private const int MAX_BACKUP_COUNT = 10;
+
+		private static JsonSerializer Serializer
+		{
+			get
+			{
+				if (_serializer == null)
+					_serializer = new JsonSerializer();
+				return _serializer;
+			}
+		}
 
 		public static void WriteTo(this object toSerialize, FileInfo filepath, bool backupPrevious = false)
 		{
-			if (toSerialize == null)
-			{
-				throw new ArgumentNullException("toSerialize");
-			}
 			if (filepath == null)
 			{
 				throw new ArgumentNullException("filepath");
@@ -37,11 +44,30 @@ namespace RegulatedNoise.Core.Helpers
 				}
 				File.Move(filepath.FullName, destFileName);
 			}
+			WriteJsonToFile(toSerialize, filepath);
+		}
+
+		public static void WriteJsonToFile(object toSerialize, FileInfo filepath)
+		{
 			using (var writer = new StreamWriter(filepath.FullName))
-			using (var jwriter = new JsonTextWriter(writer))
 			{
-				var serializer = new JsonSerializer();
-				serializer.Serialize(jwriter, toSerialize);
+				using (var jwriter = new JsonTextWriter(writer))
+				{
+					var serializer = Serializer;
+					serializer.Serialize(jwriter, toSerialize);
+				}
+			}
+		}
+
+		public static TObject ReadJsonFromFile<TObject>(FileInfo filepath)
+		{
+			using (var reader = new StreamReader(filepath.FullName))
+			{
+				using (var jreader = new JsonTextReader(reader))
+				{
+					var serializer = new JsonSerializer();
+					return serializer.Deserialize<TObject>(jreader);
+				}
 			}
 		}
 

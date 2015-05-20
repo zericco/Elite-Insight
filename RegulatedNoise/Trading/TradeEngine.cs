@@ -27,7 +27,7 @@ namespace RegulatedNoise.Trading
 
         public static TradeRoute CreateTradeRoute(MarketDataRow fromRow, MarketDataRow toRow)
         {
-            return new TradeRoute(fromRow, toRow, ApplicationContext.Milkyway.DistanceInLightYears(fromRow.SystemName, toRow.SystemName));
+            return new TradeRoute(fromRow, toRow, ApplicationContext.Model.StarMap.DistanceInLightYears(fromRow.SystemName, toRow.SystemName));
         }
 
         public static Tuple<IEnumerable<TradeRoute>, IEnumerable<TradeRoute>> GetBestRoundTripBetweenTwoStations(string stationFrom, string stationTo, out int bestRoundTrip)
@@ -37,7 +37,7 @@ namespace RegulatedNoise.Trading
             var resultsReturn = new List<TradeRoute>();
             int outwardIncome = 0;
             int returnIncome = 0;
-            IEnumerable<MarketDataRow> toStationMarket = ApplicationContext.GalacticMarket.StationMarket(stationTo);
+            IEnumerable<MarketDataRow> toStationMarket = ApplicationContext.Model.GalacticMarket.StationMarket(stationTo);
 
             foreach (var fromRow in ApplicationContext.GalacticMarket.StationMarket(stationFrom))
             {
@@ -87,7 +87,7 @@ namespace RegulatedNoise.Trading
 					    break;
 				    }
 				    current += 1;
-				    double distance = ApplicationContext.Milkyway.DistanceInLightYears(MarketDataRow.StationIdToSystemName(stationFrom),
+				    double distance = ApplicationContext.Model.StarMap.DistanceInLightYears(MarketDataRow.StationIdToSystemName(stationFrom),
 					    MarketDataRow.StationIdToSystemName(stationTo));
 				    if ((maxDistance.HasValue) && (distance > maxDistance))
 				    {

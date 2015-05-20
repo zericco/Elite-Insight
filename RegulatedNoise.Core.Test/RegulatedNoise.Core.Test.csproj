@@ -4,11 +4,11 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{1C6E84C0-A944-48BE-B196-6E6278B1F7D7}</ProjectGuid>
+    <ProjectGuid>{5FC6CE92-AC29-479B-B858-3FD5ADE30917}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>RegulatedNoise.Core</RootNamespace>
-    <AssemblyName>RegulatedNoise.Core</AssemblyName>
+    <RootNamespace>RegulatedNoise.Core.Test</RootNamespace>
+    <AssemblyName>RegulatedNoise.Core.Test</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
@@ -30,13 +30,18 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Newtonsoft.Json.6.0.8\lib\net45\Newtonsoft.Json.dll</HintPath>
+    <Reference Include="Microsoft.Practices.EnterpriseLibrary.SemanticLogging">
+      <HintPath>..\packages\EnterpriseLibrary.SemanticLogging.2.0.1406.1\lib\net45\Microsoft.Practices.EnterpriseLibrary.SemanticLogging.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Practices.EnterpriseLibrary.SemanticLogging.EventSourceAnalyzer">
+      <HintPath>..\packages\EnterpriseLibrary.SemanticLogging.EventSourceAnalyzer.2.0.1406.1\lib\net45\Microsoft.Practices.EnterpriseLibrary.SemanticLogging.EventSourceAnalyzer.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.QualityTools.UnitTestFramework, Version=10.1.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
+    <Reference Include="Newtonsoft.Json, Version=4.5.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.5.0.8\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -44,33 +49,14 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Algorithms\Levenshtein.cs" />
-    <Compile Include="DomainModel\ILocalizer.cs" />
-    <Compile Include="DomainModel\IValidator.cs" />
-    <Compile Include="DomainModel\Trading\TradeRoute.cs" />
-    <Compile Include="DomainModel\ValidationEventArgs.cs" />
-    <Compile Include="Helpers\EnumerableExtensions.cs" />
-    <Compile Include="Helpers\SerializationHelpers.cs" />
-    <Compile Include="Helpers\StringExtensions.cs" />
-    <Compile Include="ICommodities.cs" />
-    <Compile Include="Properties\Annotations.cs" />
-    <Compile Include="DataProviders\TradeDangerousDataProvider.cs" />
-    <Compile Include="DomainModel\Commodities.cs" />
-    <Compile Include="DomainModel\Commodity.cs" />
-    <Compile Include="DomainModel\DataModel.cs" />
-    <Compile Include="DomainModel\GalacticMarket.cs" />
-    <Compile Include="DomainModel\MarketDataRow.cs" />
-    <Compile Include="DomainModel\PlausibilityState.cs" />
-    <Compile Include="DomainModel\ProposalLevel.cs" />
-    <Compile Include="DomainModel\StarSystem.cs" />
-    <Compile Include="DomainModel\Station.cs" />
-    <Compile Include="DomainModel\StationCollection.cs" />
-    <Compile Include="DomainModel\SystemCollection.cs" />
-    <Compile Include="DomainModel\StarMap.cs" />
-    <Compile Include="DomainModel\UpdatableEntity.cs" />
-    <Compile Include="DomainModel\UpdateMode.cs" />
-    <Compile Include="Market.cs" />
+    <Compile Include="LogEnvetSourceTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\RegulatedNoise.Core\RegulatedNoise.Core.csproj">
+      <Project>{1c6e84c0-a944-48be-b196-6e6278b1f7d7}</Project>
+      <Name>RegulatedNoise.Core</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

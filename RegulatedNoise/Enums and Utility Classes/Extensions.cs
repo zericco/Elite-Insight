@@ -2,6 +2,7 @@
 using System.Globalization;
 using System.Linq.Expressions;
 using System.Windows.Forms;
+using RegulatedNoise.Core.DomainModel;
 
 namespace RegulatedNoise.Enums_and_Utility_Classes
 {
@@ -91,11 +92,54 @@ namespace RegulatedNoise.Enums_and_Utility_Classes
 			}
 			return retValue;
 		}
+
+		public static bool? ToNBool(this CheckBox checkBox)
+		{
+			return checkBox.CheckState.ToNBool();
+		}
+
+		public static bool? ToNBool(this CheckBox_ro checkBox)
+		{
+			return checkBox.CheckState.ToNBool();
+		}
+
+		public static bool? ToNBool(this CheckState checkState)
+		{
+			switch (checkState)
+			{
+				case CheckState.Unchecked:
+					return false;
+				case CheckState.Checked:
+					return true;
+				case CheckState.Indeterminate:
+					return null;
+				default:
+					throw new ArgumentOutOfRangeException("checkState");
+			}
+		}
+	}
+
+	static class LandingPadSizeExtensions
+	{
+		public static LandingPadSize? ToNLandingPadSize(this string landingPadSize)
+		{
+			if (String.Equals("L", landingPadSize, StringComparison.InvariantCultureIgnoreCase))
+			{
+				return LandingPadSize.L;
+			}
+			else if (String.Equals("M", landingPadSize, StringComparison.InvariantCultureIgnoreCase))
+			{
+				return LandingPadSize.M;
+			}
+			else
+			{
+				return null;
+			}
+		}
 	}
 
 	static class Extensions_LongNullable
 	{
-
 		public static string ToNString(this long? thisLong)
 		{
 			if (thisLong == null)

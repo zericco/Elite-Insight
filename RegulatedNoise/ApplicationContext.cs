@@ -54,7 +54,7 @@ namespace RegulatedNoise
 		private static LogFilesScanner _eliteLogFilesScanner;
 		private static DataModel _model;
 
-		public static IStarMap Milkyway
+		public static EDMilkyway Milkyway
 		{
 			get
 			{
@@ -159,6 +159,6 @@ namespace RegulatedNoise
 		Station GetStation(string systemname, string stationname);
 		
 		void ChangeAddSystem(StarSystem existing, string actual);
-		void ChangeAddStation(string currentName, Station currentStationdata, string oldStationName);
+		void ChangeAddStation(string currentSystemName, Station currentStationdata, string oldStationName);
 	}
 }

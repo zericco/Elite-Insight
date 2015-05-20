@@ -11,6 +11,7 @@ using System.Drawing.Imaging;
 using Tesseract;
 using System.Windows.Forms;
 using System.Runtime.InteropServices;
+using RegulatedNoise.Core.Algorithms;
 using RegulatedNoise.EDDB_Data;
 using RegulatedNoise.Enums_and_Utility_Classes;
 
@@ -197,17 +198,17 @@ namespace RegulatedNoise
                 }
             }
 
-				string[] StationsInSystem = ApplicationContext.Milkyway.GetStationNames(SystemAtTimeOfScreenshot);
+				string[] StationsInSystem = ApplicationContext.Model.StarMap.GetSystem(SystemAtTimeOfScreenshot).Stations.Select(s => s.Name).ToArray();
             string headerResult_temp = StationsInSystem.FirstOrDefault(x => x.Equals(_callingForm.tbCurrentStationinfoFromLogs.Text, StringComparison.InvariantCultureIgnoreCase));
 
             if(headerResult_temp == null)
             { 
                 // station not found in database
-                var matchesInStationReferenceList = StationsInSystem.OrderBy(x => _levenshtein.LD2(headerResult, x)).ToList();
+                var matchesInStationReferenceList = StationsInSystem.OrderBy(x => Levenshtein.Compute(headerResult, x)).ToList();
 
                 if(matchesInStationReferenceList.Count > 0)
                 {
-                    var ld = _levenshtein.LD2(headerResult, matchesInStationReferenceList[0].ToUpper());
+                    var ld = Levenshtein.Compute(headerResult, matchesInStationReferenceList[0].ToUpper());
                 
                     // this depends on the length of the word - this factor works really good
                     double LevenshteinLimit = Math.Round((matchesInStationReferenceList[0].Length * 0.7), 0);

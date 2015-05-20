@@ -14,14 +14,13 @@ using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Security.Permissions;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Windows.Forms.DataVisualization.Charting;
 using CodeProject.Dialog;
-using EdClasses.ClassDefinitions;
 using RegulatedNoise.Core;
+using RegulatedNoise.Core.Algorithms;
 using RegulatedNoise.Core.DomainModel;
 using RegulatedNoise.Core.DomainModel.Trading;
 using RegulatedNoise.EDDB_Data;
@@ -960,7 +959,7 @@ namespace RegulatedNoise
 
 				if (GalacticMarket.Update(marketData) != Market.UpdateState.Discarded)
 				{
-					if (postToEddn && cbPostOnImport.Checked && ApplicationContext.Milkyway.SystemExists(marketData.SystemName))
+					if (postToEddn && cbPostOnImport.Checked && ApplicationContext.Model.StarMap.GetSystem(marketData.SystemName) != null)
 					{
 						ApplicationContext.Eddn.SendToEddn(marketData);
 					}
@@ -1004,7 +1003,7 @@ namespace RegulatedNoise
 				if (cmbStationToStar.Text == "")
 					return false;
 
-				dist = ApplicationContext.Milkyway.GetStationDistance(SystemName, StationName);
+				dist = ApplicationContext.Model.StarMap.GetStationDistance(SystemName, StationName);
 
 				if ((!_settings.IncludeUnknownDTS) && (dist == -1))
 					return false;
@@ -1028,7 +1027,7 @@ namespace RegulatedNoise
 		private double DistanceInLightYears(string remoteSystemName)
 		{
 			string localSystem = SystemToMeasureDistancesFrom();
-			return ApplicationContext.Milkyway.DistanceInLightYears(remoteSystemName, localSystem);
+			return ApplicationContext.Model.StarMap.DistanceInLightYears(remoteSystemName, localSystem);
 		}
 
 		private string SystemToMeasureDistancesFrom()
@@ -1742,7 +1741,7 @@ namespace RegulatedNoise
 				lbCommodities.BeginUpdate();
 				foreach (MarketDataRow row in GalacticMarket.CommodityMarket(selectedCmbItem.ToString()).Where(x => IsInPerimeter(x)))
 				{
-					double distance = ApplicationContext.Milkyway.DistanceInLightYears(tbCurrentSystemFromLogs.Text, row.SystemName);
+					double distance = ApplicationContext.Model.StarMap.DistanceInLightYears(tbCurrentSystemFromLogs.Text, row.SystemName);
 					var viewItem = new ListViewItem(new string[] 
 					{   row.StationID,
 						row.SellPrice > 0 ? row.SellPrice.ToString(CultureInfo.InvariantCulture) : "",
@@ -2511,7 +2510,7 @@ namespace RegulatedNoise
 								foreach (var reference in KnownCommodityNames)
 								{
 									var upperRef = StripPunctuationFromScannedText(reference);
-									var levenshteinNumber = _levenshtein.LD2(upperRef, replacedCamelCase);
+									var levenshteinNumber = Levenshtein.Compute(upperRef, replacedCamelCase);
 									//if(levenshteinNumber != _levenshtein.LD(upperRef, replacedCamelCase))
 									//    Debug.WriteLine("Doh!");
 
@@ -2572,10 +2571,10 @@ namespace RegulatedNoise
 					{
 						var commodityLevelUpperCase = StripPunctuationFromScannedText(_commodityTexts[_correctionRow, _correctionColumn]);
 
-						var levenshteinLow = _levenshtein.LD2(CommodityLevel[(byte)enCommodityLevel.LOW].ToUpper(), commodityLevelUpperCase);
-						var levenshteinMed = _levenshtein.LD2(CommodityLevel[(byte)enCommodityLevel.MED].ToUpper(), commodityLevelUpperCase);
-						var levenshteinHigh = _levenshtein.LD2(CommodityLevel[(byte)enCommodityLevel.HIGH].ToUpper(), commodityLevelUpperCase);
-						var levenshteinBlank = _levenshtein.LD2("", commodityLevelUpperCase);
+						var levenshteinLow = Levenshtein.Compute(CommodityLevel[(byte)enCommodityLevel.LOW].ToUpper(), commodityLevelUpperCase);
+						var levenshteinMed = Levenshtein.Compute(CommodityLevel[(byte)enCommodityLevel.MED].ToUpper(), commodityLevelUpperCase);
+						var levenshteinHigh = Levenshtein.Compute(CommodityLevel[(byte)enCommodityLevel.HIGH].ToUpper(), commodityLevelUpperCase);
+						var levenshteinBlank = Levenshtein.Compute("", commodityLevelUpperCase);
 
 						//Pick the lowest levenshtein number
 						var lowestLevenshtein = Math.Min(Math.Min(levenshteinLow, levenshteinMed), Math.Min(levenshteinHigh, levenshteinBlank));
@@ -2929,7 +2928,7 @@ namespace RegulatedNoise
 
 		}
 
-		public bool CheckPricePlausibility(string[] csvRows, bool simpleEDDNCheck = false)
+		public bool CheckPricePlausibility(string[] csvRows)
 		{
 			bool implausible = false;
 
@@ -2938,12 +2937,11 @@ namespace RegulatedNoise
 				if (csvRow.Contains(";"))
 				{
 					MarketDataRow currentRow = MarketDataRow.ReadCsv(csvRow);
-					implausible = !ApplicationContext.Milkyway.IsImplausible(currentRow, simpleEDDNCheck).Plausible;
+					implausible = !ApplicationContext.Model.Validate(currentRow).Plausible;
 				}
 				if (implausible)
 					break;
 			}
-
 			return implausible;
 		}
 
@@ -3150,7 +3148,7 @@ namespace RegulatedNoise
 							eddn.Message.CommodityName = commodity;
 
 							string csvFormatted = eddn.Message.ToCsv(true);
-							var plausibilityState = ApplicationContext.Milkyway.IsImplausible(eddn.Message, true);
+							var plausibilityState = ApplicationContext.Model.Validate(eddn.Message);
 							if (plausibilityState.Plausible)
 							{
 								ImportMarketData(eddn.Message, false, false);
@@ -3270,9 +3268,9 @@ namespace RegulatedNoise
 				if (_stationToStationReturnColumnSorter.SortColumn != 7)
 					lvStationToStationReturn_ColumnClick(null, new ColumnClickEventArgs(7));
 
-				if (ApplicationContext.Milkyway.SystemExists(MarketDataRow.StationIdToSystemName(stationFrom)))
+				if (ApplicationContext.Model.StarMap.GetSystem(MarketDataRow.StationIdToSystemName(stationFrom)) != null)
 				{
-					var dist = ApplicationContext.Milkyway.DistanceInLightYears(MarketDataRow.StationIdToSystemName(stationFrom), MarketDataRow.StationIdToSystemName(stationTo));
+					var dist = ApplicationContext.Model.StarMap.DistanceInLightYears(MarketDataRow.StationIdToSystemName(stationFrom), MarketDataRow.StationIdToSystemName(stationTo));
 					if (dist < double.MaxValue)
 						lblStationToStationLightYears.Text = "(" +
 																				  String.Format("{0:0.00}", dist
@@ -3582,15 +3580,12 @@ namespace RegulatedNoise
 			if (_cbLogStationNameIsDirty)
 			{
 				cbLogStationName.Items.Clear();
-
-				IEnumerable<Station> stationsInSystem = ApplicationContext.Milkyway.GetStations(cbLogSystemName.Text);
-
+				IEnumerable<Station> stationsInSystem = GetStations(cbLogSystemName.Text);
 				if (stationsInSystem != null)
 				{
 					foreach (Station station in stationsInSystem)
 						cbLogStationName.Items.Add(station.Name);
 				}
-
 				_cbLogStationNameIsDirty = false;
 			}
 		}
@@ -3604,7 +3599,7 @@ namespace RegulatedNoise
 		{
 			cbLogStationName.Items.Clear();
 
-			IEnumerable<Station> stationsInSystem = ApplicationContext.Milkyway.GetStations(cbLogSystemName.Text);
+			IEnumerable<Station> stationsInSystem = GetStations(cbLogSystemName.Text);
 
 			if (stationsInSystem != null)
 			{
@@ -4791,7 +4786,7 @@ namespace RegulatedNoise
 						tbCurrentStationinfoFromLogs.Text = stationName;
 						newLocation = true;
 
-						IEnumerable<Station> systemStations = ApplicationContext.Milkyway.GetStations(systemName);
+						IEnumerable<Station> systemStations = GetStations(systemName);
 
 						if ((systemStations != null) &&
 							 (systemStations.Any(
@@ -4819,6 +4814,19 @@ namespace RegulatedNoise
 						tabCtrlMain.SelectedTab = tabCtrlMain.TabPages["tabSystemData"];
 				}
 			});
+		}
+
+		private static IEnumerable<Station> GetStations(string systemName)
+		{
+			StarSystem starSystem = ApplicationContext.Model.StarMap.GetSystem(systemName);
+			if (starSystem != null)
+			{
+				return starSystem.Stations;
+			}
+			else
+			{
+				return new Station[0];
+			}
 		}
 
 		/// <summary>
@@ -4874,8 +4882,8 @@ namespace RegulatedNoise
 				return;
 			}
 
-			lblSystemCountTotal.Text = ApplicationContext.Milkyway.GetSystems().Count().ToString();
-			lblStationCountTotal.Text = ApplicationContext.Milkyway.GetStations().Count().ToString();
+			lblSystemCountTotal.Text = ApplicationContext.Model.StarMap.Count.ToString();
+			lblStationCountTotal.Text = ApplicationContext.Model.StarMap.StationsCount.ToString();
 		}
 
 
@@ -4903,7 +4911,7 @@ namespace RegulatedNoise
 			else
 			{
 				cmbSystemsAllSystems.SelectedValue = systemname;
-				m_loadedSystemdata = ApplicationContext.Milkyway.GetSystem(systemname);
+				m_loadedSystemdata = GetSystem(systemname);
 				m_SystemIsNew = false;
 			}
 
@@ -4946,7 +4954,7 @@ namespace RegulatedNoise
 					cmbStationStations.ReadOnly = false;
 				}
 
-				IEnumerable<Station> stationsInSystem = ApplicationContext.Model.StarMap[systemname].Stations;
+				IEnumerable<Station> stationsInSystem = GetStations(systemname);
 				foreach (var station in stationsInSystem)
 				{
 					cmbStationStations.Items.Add(station.Name);
@@ -5006,7 +5014,7 @@ namespace RegulatedNoise
 			else
 			{
 				cmbStationStations.SelectedItem = stationname;
-				m_loadedStationdata = ApplicationContext.Milkyway.GetStation(systemname, stationname);
+				m_loadedStationdata = GetStation(systemname, stationname);
 				m_StationIsNew = false;
 			}
 
@@ -5048,9 +5056,8 @@ namespace RegulatedNoise
 					cmbStationStations.ReadOnly = false;
 				}
 
-				if (ApplicationContext.Model.StarMap[m_loadedStationdata.System]
-					.Stations.Any(x => x.Source == EddbDataProvider.SOURCENAME 
-										&& x.Name.Equals(m_loadedStationdata.Name, StringComparison.InvariantCultureIgnoreCase)))				
+				if (GetStations(m_loadedStationdata.System).Any(x => x.Source == EddbDataProvider.SOURCENAME
+										&& x.Name.Equals(m_loadedStationdata.Name, StringComparison.InvariantCultureIgnoreCase)))
 				{
 					txtStationName.ReadOnly = true;
 					lblStationRenameHint.Visible = true;
@@ -5305,7 +5312,7 @@ namespace RegulatedNoise
 
 			m_SystemLoadingValues = true;
 			this.cmbSystemsAllSystems.BeginUpdate();
-			this.cmbSystemsAllSystems.DataSource = ApplicationContext.Milkyway.GetSystems().OrderBy(x => x.Name).ToList();
+			this.cmbSystemsAllSystems.DataSource = ApplicationContext.Model.StarMap.OrderBy(x => x.Name).ToList();
 			this.cmbSystemsAllSystems.ValueMember = "Name";
 			this.cmbSystemsAllSystems.DisplayMember = "Name";
 			this.cmbSystemsAllSystems.EndUpdate();
@@ -5403,7 +5410,7 @@ namespace RegulatedNoise
 				case "txtSystemName":
 					if (m_SystemIsNew)
 					{
-						StarSystem existing = ApplicationContext.Model.StarMap[txtSystemName.Text];
+						StarSystem existing = GetSystem(txtSystemName.Text);
 						if (existing != null)
 						{
 							if (DateTime.Now.Subtract(m_SystemWarningTime).TotalSeconds > 5)
@@ -5475,8 +5482,7 @@ namespace RegulatedNoise
 				case "txtStationName":
 					if (m_StationIsNew)
 					{
-						EDStation existing = ApplicationContext.Milkyway.GetStations().FirstOrDefault(x => (x.Name.Equals(txtStationName.Text, StringComparison.InvariantCultureIgnoreCase)) &&
-																																													(x.SystemId == m_currentStationdata.SystemId));
+						Station existing = GetStation(m_currentStationdata.System, txtStationName.Text);
 						if (existing != null)
 						{
 							if (DateTime.Now.Subtract(m_StationWarningTime).TotalSeconds > 5)
@@ -5486,11 +5492,11 @@ namespace RegulatedNoise
 							}
 						}
 					}
-					m_currentStationdata.Name = txtStationName.Text;
+					m_currentStationdata = new Station(txtStationName.Text);
 					break;
 
 				case "cmbStationMaxLandingPadSize":
-					m_currentStationdata.MaxLandingPadSize = cmbStationMaxLandingPadSize.Text.ToNString();
+					m_currentStationdata.MaxLandingPadSize = cmbStationMaxLandingPadSize.Text.ToNLandingPadSize();
 					break;
 
 				case "txtStationDistanceToStar":
@@ -5529,40 +5535,50 @@ namespace RegulatedNoise
 
 		}
 
+		private Station GetStation(string systemName, string stationName)
+		{
+			return GetSystem(systemName).Stations.FirstOrDefault(x => x.Name.Equals(stationName, StringComparison.InvariantCultureIgnoreCase));
+		}
+
+		private static StarSystem GetSystem(string systemName)
+		{
+			return ApplicationContext.Model.StarMap.GetSystem(systemName);
+		}
+
 		private void CheckBox_StationSystem_CheckedChanged(object sender, EventArgs e)
 		{
 			switch (((Control)sender).Name)
 			{
 				case "cbSystemNeedsPermit":
-					m_currentSystemdata.NeedsPermit = cbSystemNeedsPermit.toNInt();
+					m_currentSystemdata.NeedsPermit = cbSystemNeedsPermit.ToNBool();
 					break;
 
 				case "cbStationHasCommodities":
-					m_currentStationdata.HasCommodities = cbStationHasCommodities.toNInt();
+					m_currentStationdata.HasCommodities = cbStationHasCommodities.ToNBool();
 					break;
 
 				case "cbStationHasBlackmarket":
-					m_currentStationdata.HasBlackmarket = cbStationHasBlackmarket.toNInt();
+					m_currentStationdata.HasBlackmarket = cbStationHasBlackmarket.ToNBool();
 					break;
 
 				case "cbStationHasOutfitting":
-					m_currentStationdata.HasOutfitting = cbStationHasOutfitting.toNInt();
+					m_currentStationdata.HasOutfitting = cbStationHasOutfitting.ToNBool();
 					break;
 
 				case "cbStationHasShipyard":
-					m_currentStationdata.HasShipyard = cbStationHasShipyard.toNInt();
+					m_currentStationdata.HasShipyard = cbStationHasShipyard.ToNBool();
 					break;
 
 				case "cbStationHasRearm":
-					m_currentStationdata.HasRearm = cbStationHasRearm.toNInt();
+					m_currentStationdata.HasRearm = cbStationHasRearm.ToNBool();
 					break;
 
 				case "cbStationHasRefuel":
-					m_currentStationdata.HasRefuel = cbStationHasRefuel.toNInt();
+					m_currentStationdata.HasRefuel = cbStationHasRefuel.ToNBool();
 					break;
 
 				case "cbStationHasRepair":
-					m_currentStationdata.HasRepair = cbStationHasRepair.toNInt();
+					m_currentStationdata.HasRepair = cbStationHasRepair.ToNBool();
 					break;
 			}
 
@@ -5598,13 +5614,13 @@ namespace RegulatedNoise
 
 		private void cmdSystemSave_Click(object sender, EventArgs e)
 		{
-			EDSystem existing = null;
+			StarSystem existing = null;
 			bool newComboBoxRefresh = false;
 
 			if (m_SystemIsNew)
 			{
 				// adding a new system
-				existing = ApplicationContext.Milkyway.GetSystems().FirstOrDefault(x => x.Name.Equals(m_currentSystemdata.Name, StringComparison.InvariantCultureIgnoreCase));
+				existing = GetSystem(m_currentSystemdata.Name);
 				if (existing != null)
 				{
 					MsgBox.Show("A system with this name already exists", "Adding a new system", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
@@ -5618,20 +5634,21 @@ namespace RegulatedNoise
 			else if (!_oldSystemName.Equals(m_currentSystemdata.Name))
 			{
 				// changing system name
-				existing = ApplicationContext.Milkyway.GetSystems().FirstOrDefault(x => x.Source == EddbDataProvider.SOURCENAME && x.Name.Equals(_oldSystemName, StringComparison.InvariantCultureIgnoreCase));
+				existing = GetSystem(m_currentSystemdata.Name);
 				if (existing != null)
 				{
-					MsgBox.Show("It's not allowed to rename a EDDB system", "renaming system", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
-					return;
-				}
+					if (existing.Source.Contains(Eddn.SOURCENAME))
+					{
+						MsgBox.Show("It's not allowed to rename a EDDB system", "renaming system", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+						return;
+					}
 
-				existing = ApplicationContext.Milkyway.GetSystems().FirstOrDefault(x => x.Name.Equals(m_currentSystemdata.Name, StringComparison.InvariantCultureIgnoreCase));
-				if (existing != null)
-				{
-					MsgBox.Show("A system with the new name's already existing", "renaming system", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
-					return;
+					else
+					{
+						MsgBox.Show("A system with the new name's already existing", "renaming system", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+						return;
+					}
 				}
-
 				newComboBoxRefresh = true;
 			}
 
@@ -5641,7 +5658,7 @@ namespace RegulatedNoise
 				if (m_SystemIsNew)
 					_oldSystemName = "";
 
-				ApplicationContext.Milkyway.ChangeAddSystem(m_currentSystemdata, _oldSystemName);
+				UpdateSystem(m_currentSystemdata, _oldSystemName);
 				setSystemEditable(false);
 
 				if (newComboBoxRefresh)
@@ -5650,7 +5667,7 @@ namespace RegulatedNoise
 					cmbSystemsAllSystems.BeginUpdate();
 
 					cmbSystemsAllSystems.DataSource = null;
-					cmbSystemsAllSystems.DataSource = ApplicationContext.Milkyway.GetSystems().OrderBy(x => x.Name).ToList();
+					cmbSystemsAllSystems.DataSource = ApplicationContext.Model.StarMap.OrderBy(x => x.Name).ToList();
 					cmbSystemsAllSystems.ValueMember = "Name";
 					cmbSystemsAllSystems.DisplayMember = "Name";
 					cmbSystemsAllSystems.Refresh();
@@ -5670,13 +5687,12 @@ namespace RegulatedNoise
 
 		private void cmdStationSave_Click(object sender, EventArgs e)
 		{
-			EDStation existing = null;
+			Station existing = null;
 
 			if (m_StationIsNew)
 			{
 				// adding a new Station
-				existing = ApplicationContext.Milkyway.GetStations().FirstOrDefault(x => (x.Name.Equals(m_currentStationdata.Name, StringComparison.InvariantCultureIgnoreCase)) &&
-																																						  (x.SystemId.Equals(m_currentSystemdata.Id)));
+				existing = GetStation(m_currentStationdata.System, m_currentStationdata.Name);
 				if (existing != null)
 				{
 					MsgBox.Show("A station with this name already exists", "Adding a new station", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
@@ -5686,20 +5702,20 @@ namespace RegulatedNoise
 			else if (!_oldStationName.Equals(m_currentStationdata.Name))
 			{
 				// changing Station name
-				existing = ApplicationContext.Milkyway.GetStations().FirstOrDefault(x => x.Source == EddbDataProvider.SOURCENAME && (x.Name.Equals(_oldStationName, StringComparison.InvariantCultureIgnoreCase)) &&
-																																					  (x.SystemId.Equals(m_currentSystemdata.Id)));
+				existing = GetStation(m_currentStationdata.System, m_currentStationdata.Name);
 				if (existing != null)
 				{
-					MsgBox.Show("It's not allowed to rename a EDDB station", "renaming station", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
-					return;
-				}
+					if (existing.Source.Contains(Eddn.SOURCENAME))
+					{
+						MsgBox.Show("It's not allowed to rename a EDDB station", "renaming station", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+						return;
+					}
 
-				existing = ApplicationContext.Milkyway.GetStations().FirstOrDefault(x => (x.Name.Equals(m_currentStationdata.Name, StringComparison.InvariantCultureIgnoreCase)) &&
-																																						  (x.SystemId.Equals(m_currentSystemdata.Id)));
-				if (existing != null)
-				{
-					MsgBox.Show("A station with the new name's already existing", "renaming station", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
-					return;
+					else
+					{
+						MsgBox.Show("A station with the new name's already existing", "renaming station", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+						return;
+					}
 				}
 			}
 
@@ -5709,7 +5725,7 @@ namespace RegulatedNoise
 					_oldStationName = "";
 
 				Cursor = Cursors.WaitCursor;
-				ApplicationContext.Milkyway.ChangeAddStation(m_currentSystemdata.Name, m_currentStationdata, _oldStationName);
+				UpdateStation(m_currentStationdata, _oldStationName);
 
 				cmbSystemsAllSystems.ReadOnly = false;
 				cmbStationStations.ReadOnly = false;
@@ -5725,6 +5741,40 @@ namespace RegulatedNoise
 			}
 		}
 
+		private static void UpdateSystem(StarSystem newOrUpdatedSystem, string previousSystem)
+		{
+			if (newOrUpdatedSystem.Name.Equals(previousSystem, StringComparison.InvariantCultureIgnoreCase))
+			{
+				ApplicationContext.Model.StarMap.Update(newOrUpdatedSystem);
+			}
+			else
+			{
+				StarSystem starSystem = GetSystem(previousSystem);
+				if (starSystem != null)
+				{
+					ApplicationContext.Model.StarMap.Remove(starSystem);
+				}
+				ApplicationContext.Model.StarMap.Update(newOrUpdatedSystem);
+			}
+		}
+
+		private static void UpdateStation(Station newOrUpdatedStation, string oldStationName)
+		{
+			if (newOrUpdatedStation.Name.Equals(oldStationName, StringComparison.InvariantCultureIgnoreCase))
+			{
+				ApplicationContext.Model.StarMap.Update(newOrUpdatedStation);
+			}
+			else
+			{
+				Station station = ApplicationContext.Model.StarMap.GetStation(oldStationName);
+				if (station != null)
+				{
+					ApplicationContext.Model.StarMap.Remove(station);
+				}
+				ApplicationContext.Model.StarMap.Update(newOrUpdatedStation);
+			}
+		}
+
 		private void cmdSystemNew_Click(object sender, EventArgs e)
 		{
 
@@ -5736,7 +5786,7 @@ namespace RegulatedNoise
 			if (InpBox.Show("create a new system", "insert the name of the new system", ref newSystemname) == DialogResult.OK)
 			{
 
-				EDSystem existing = ApplicationContext.Milkyway.GetSystems().FirstOrDefault(x => (x.Name.Equals(newSystemname, StringComparison.InvariantCultureIgnoreCase)));
+				StarSystem existing = GetSystem(newSystemname);
 				if (existing != null)
 				{
 					MsgBox.Show("A system with this name already exists", "Adding a new system", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
@@ -5779,16 +5829,13 @@ namespace RegulatedNoise
 
 			string newStationname = tbCurrentStationinfoFromLogs.Text;
 
-			EDStation existing = ApplicationContext.Milkyway.GetStations().FirstOrDefault(x => (x.Name.Equals(newStationname, StringComparison.InvariantCultureIgnoreCase)) &&
-																																										(x.SystemId.Equals(m_currentSystemdata.Id)));
+			Station existing = GetStation(m_currentSystemdata.Name, newStationname);
 			if (existing != null)
 				newStationname = String.Empty;
 
 			if (InpBox.Show("create a new station", "insert the name of the new station", ref newStationname) == DialogResult.OK)
 			{
-				existing = ApplicationContext.Milkyway.GetStations().FirstOrDefault(x => (x.Name.Equals(newStationname, StringComparison.InvariantCultureIgnoreCase)) &&
-																																						  (x.SystemId.Equals(m_currentSystemdata.Id)));
-
+				existing = GetStation(m_currentSystemdata.Name, newStationname);
 				if (existing != null)
 				{
 					MsgBox.Show("A station with this name already exists in this system", "Adding a new station", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
@@ -5854,7 +5901,6 @@ namespace RegulatedNoise
 					return;
 				}
 
-				txtSystemId.ReadOnly = true;
 				txtSystemX.ReadOnly = !enabled;
 				txtSystemY.ReadOnly = !enabled;
 				txtSystemZ.ReadOnly = !enabled;
@@ -5869,7 +5915,7 @@ namespace RegulatedNoise
 				txtSystemUpdatedAt.ReadOnly = true;
 
 				if (enabled)
-					if (ApplicationContext.Milkyway.GetSystems().Any(x => x.Source == EddbDataProvider.SOURCENAME && x.Name.Equals(m_loadedSystemdata.Name, StringComparison.InvariantCultureIgnoreCase)))
+					if (GetSystem(m_loadedSystemdata.Name).Source  == EddbDataProvider.SOURCENAME)
 					{
 						txtSystemName.ReadOnly = true;
 						lblSystemRenameHint.Visible = true;
@@ -5928,8 +5974,7 @@ namespace RegulatedNoise
 					lbStationEconomies.Tag = "ReadOnly";
 
 				if (enabled)
-					if (ApplicationContext.Milkyway.GetStations().Any(x => x.Source == EddbDataProvider.SOURCENAME && (x.Name.Equals(m_loadedStationdata.Name, StringComparison.InvariantCultureIgnoreCase)) &&
-																																				 (x.SystemId.Equals(m_currentSystemdata.Id))))
+					if (GetStation(m_currentSystemdata.Name, m_loadedStationdata.Name) != null)
 					{
 						txtStationName.ReadOnly = true;
 						lblStationRenameHint.Visible = true;
