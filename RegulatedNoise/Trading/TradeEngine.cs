@@ -87,9 +87,8 @@ namespace RegulatedNoise.Trading
 					    break;
 				    }
 				    current += 1;
-				    double distance = ApplicationContext.Model.StarMap.DistanceInLightYears(MarketDataRow.StationIdToSystemName(stationFrom),
-					    MarketDataRow.StationIdToSystemName(stationTo));
-				    if ((maxDistance.HasValue) && (distance > maxDistance))
+				    double? distance = ApplicationContext.Model.StarMap.DistanceInLightYears(MarketDataRow.StationIdToSystemName(stationFrom), MarketDataRow.StationIdToSystemName(stationTo));
+					 if ((maxDistance.HasValue) && distance.HasValue && (distance.Value > maxDistance))
 				    {
 					    continue; 
 				    }
@@ -116,9 +115,9 @@ namespace RegulatedNoise.Trading
 					    string credits;
 					    double creditsDouble;
 
-					    if (showIncomeByLightYear && distance < Double.MaxValue)
+					    if (showIncomeByLightYear && distance.HasValue)
 					    {
-						    creditsDouble = currentTripIncome/(2.0*distance);
+						    creditsDouble = currentTripIncome/(2.0 * distance.Value);
 						    credits = String.Format("{0:0.000}", creditsDouble/(2.0*distance)) + " Cr/Ly";
 					    }
 					    else

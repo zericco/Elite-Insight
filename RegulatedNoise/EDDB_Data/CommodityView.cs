@@ -11,7 +11,7 @@ namespace RegulatedNoise.EDDB_Data
 {
 	public partial class CommodityView : RNBaseForm
 	{
-		private readonly ICommodities _commodities;
+		private readonly Commodities _commodities;
 		public override string thisObjectName { get { return "CommodityView"; } }
 
 		private Boolean m_DataChanged = false;
@@ -19,7 +19,7 @@ namespace RegulatedNoise.EDDB_Data
 		private Boolean m_NoRefresh = false;
 		private readonly List<Commodity> _dataSource;
 
-		public CommodityView(ICommodities commodities, string selectedCommodity = "")
+		public CommodityView(Commodities commodities, string selectedCommodity = "")
 		{
 			if (commodities == null)
 			{

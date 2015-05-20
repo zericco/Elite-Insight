@@ -7,7 +7,7 @@ using RegulatedNoise.Core.Helpers;
 
 namespace RegulatedNoise.Core.DomainModel
 {
-	public class Commodities : ICommodities
+	public class Commodities: IReadOnlyCollection<Commodity>
 	{
 		private readonly CommodityCollection _commodities;
 
@@ -81,19 +81,12 @@ namespace RegulatedNoise.Core.DomainModel
 			return _commodities.Contains(item);
 		}
 
-		public void CopyTo(Commodity[] array, int arrayIndex)
-		{
-			_commodities.CopyTo(array, arrayIndex);
-		}
-
 		public bool Remove(Commodity item)
 		{
 			return _commodities.Remove(item);
 		}
 
 		public int Count { get { return _commodities.Count; } }
-
-		public bool IsReadOnly { get { return false; } }
 
 		public void Update(Commodity commodity)
 		{

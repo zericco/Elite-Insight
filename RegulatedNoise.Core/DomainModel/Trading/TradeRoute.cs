@@ -29,9 +29,9 @@ namespace RegulatedNoise.Core.DomainModel.Trading
 
         public readonly int Profit;
 
-        public readonly double Distance;
+        public readonly double? Distance;
 
-        public TradeRoute ([NotNull] MarketDataRow origin, [NotNull] MarketDataRow destination, double distance = -1)
+        public TradeRoute ([NotNull] MarketDataRow origin, [NotNull] MarketDataRow destination, double? distance = null)
         {
             if (origin == null) throw new ArgumentNullException("origin");
             if (destination == null) throw new ArgumentNullException("destination");

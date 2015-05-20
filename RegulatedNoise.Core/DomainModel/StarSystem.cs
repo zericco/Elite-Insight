@@ -130,7 +130,7 @@ namespace RegulatedNoise.Core.DomainModel
         public void UpdateStations([NotNull] Station station)
         {
             if (station == null) throw new ArgumentNullException("station");
-            if (station.System != Name) throw new ArgumentException("station system " + station.System + " does not match system " + Name, "station");
+            if (!station.System.Equals(Name, StringComparison.InvariantCultureIgnoreCase)) throw new ArgumentException("station system " + station.System + " does not match system " + Name, "station");
             _stations.UpdateFrom(station);
         }
 

@@ -4,7 +4,6 @@ using System.Drawing;
 using System.IO;
 using System.Text;
 using System.Windows.Forms;
-using RegulatedNoise.Core;
 using RegulatedNoise.Core.DomainModel;
 using RegulatedNoise.EDDB_Data;
 using RegulatedNoise.Enums_and_Utility_Classes;
@@ -21,9 +20,9 @@ namespace RegulatedNoise
 
 		private bool suspendTextChanged = false;
 		private readonly IValidator<MarketDataRow> _validator;
-		private readonly ICommodities _commodities;
+		private readonly Commodities _commodities;
 
-		public EditOcrResults(string dataToEdit, IValidator<MarketDataRow> validator, ICommodities commodities)
+		public EditOcrResults(string dataToEdit, IValidator<MarketDataRow> validator, Commodities commodities)
 		{
 			if (validator == null)
 			{

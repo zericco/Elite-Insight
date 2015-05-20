@@ -1,7 +1,10 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using RegulatedNoise.Annotations;
+using RegulatedNoise.Core.Algorithms;
+using RegulatedNoise.Core.Engines;
 using RegulatedNoise.Core.Helpers;
 
 namespace RegulatedNoise.Core.DomainModel
@@ -11,6 +14,8 @@ namespace RegulatedNoise.Core.DomainModel
 		private readonly object _updating = new object();
 
 		private readonly SystemCollection _systems;
+
+		private readonly StationCollection _stations;
 
 		public IEnumerator<StarSystem> GetEnumerator()
 		{
@@ -27,7 +32,7 @@ namespace RegulatedNoise.Core.DomainModel
 			get { return _systems.Count; }
 		}
 
-		public int StationsCount { get { throw new NotImplementedException(); } }
+		public int StationsCount { get { return _stations.Count; } }
 
 		public void Remove(Station station)
 		{
@@ -42,8 +47,8 @@ namespace RegulatedNoise.Core.DomainModel
 		public StarMap()
 		{
 			_systems = new SystemCollection();
+			_stations = new StationCollection();
 		}
-
 
 		public void UpdateRange([NotNull] IEnumerable<StarSystem> systems)
 		{
@@ -65,6 +70,7 @@ namespace RegulatedNoise.Core.DomainModel
 					_systems.Add(existingSystem);
 				}
 				existingSystem.UpdateStations(station);
+				_stations.UpdateFrom(station);
 			}
 		}
 
@@ -89,29 +95,50 @@ namespace RegulatedNoise.Core.DomainModel
 			return _systems[systemName.ToCleanUpperCase()];
 		}
 
+		public StarSystem TryGetSystem(string systemName)
+		{
+			StarSystem system;
+			_systems.TryGetValue(systemName.ToCleanUpperCase(), out system);
+			return system;
+		}
+
 		public IReadOnlyCollection<StarSystem> FindSystem(string text)
 		{
-			throw new NotImplementedException();
+			return _systems.LevenFilter(text, s => s.Name);
 		}
 
 		public Station GetStation(string stationName)
 		{
-			throw new NotImplementedException();
+			return _stations[stationName.ToCleanTitleCase()];
+		}
+
+		public Station TryGetStation(string stationName)
+		{
+			Station station;
+			_stations.TryGetValue(stationName.ToCleanTitleCase(), out station);
+			return station;
 		}
 
 		public IReadOnlyCollection<Station> FindStation(string text)
 		{
-			throw new NotImplementedException();
+			return _stations.LevenFilter(text, s => s.Name);
 		}
 
-		public double DistanceInLightYears(string system1, string system2)
+		public double? DistanceInLightYears(string system1, string system2)
 		{
-			throw new NotImplementedException();
+			StarSystem starSystem1 = TryGetSystem(system1);
+			if (starSystem1 == null)
+				return null;
+			StarSystem starSystem2 = TryGetSystem(system2);
+			if (starSystem2 == null)
+				return null;
+			return starSystem1.DistanceInLightYears(starSystem2);
 		}
 
-		public int? GetStationDistance(string systemName, string stationName)
+		public int? GetStationDistance(string stationName)
 		{
-			throw new NotImplementedException();
+			var station = TryGetStation(stationName);
+			return station == null ? null : station.DistanceToStar;
 		}
 	}
 }

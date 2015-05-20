@@ -971,15 +971,13 @@ namespace RegulatedNoise
 		{
 			try
 			{
-				double dist;
-
 				if (cmbLightYears.Text == "")
 					return false;
 
-				dist = DistanceInLightYears(remoteSystemName);
+				double? dist = DistanceInLightYears(remoteSystemName);
 
 				var limit = float.Parse(cmbLightYears.Text);
-				if (dist < limit)
+				if (dist.HasValue && dist < limit)
 				{
 					return true;
 				}
@@ -994,7 +992,7 @@ namespace RegulatedNoise
 			}
 		}
 
-		private bool StationDistance(string SystemName, string StationName)
+		private bool StationDistance(string stationName)
 		{
 			try
 			{
@@ -1003,7 +1001,7 @@ namespace RegulatedNoise
 				if (cmbStationToStar.Text == "")
 					return false;
 
-				dist = ApplicationContext.Model.StarMap.GetStationDistance(SystemName, StationName);
+				dist = ApplicationContext.Model.StarMap.GetStationDistance(stationName);
 
 				if ((!_settings.IncludeUnknownDTS) && (dist == -1))
 					return false;
@@ -1024,7 +1022,7 @@ namespace RegulatedNoise
 			}
 		}
 
-		private double DistanceInLightYears(string remoteSystemName)
+		private double? DistanceInLightYears(string remoteSystemName)
 		{
 			string localSystem = SystemToMeasureDistancesFrom();
 			return ApplicationContext.Model.StarMap.DistanceInLightYears(remoteSystemName, localSystem);
@@ -1741,7 +1739,7 @@ namespace RegulatedNoise
 				lbCommodities.BeginUpdate();
 				foreach (MarketDataRow row in GalacticMarket.CommodityMarket(selectedCmbItem.ToString()).Where(x => IsInPerimeter(x)))
 				{
-					double distance = ApplicationContext.Model.StarMap.DistanceInLightYears(tbCurrentSystemFromLogs.Text, row.SystemName);
+					double? distance = ApplicationContext.Model.StarMap.DistanceInLightYears(tbCurrentSystemFromLogs.Text, row.SystemName);
 					var viewItem = new ListViewItem(new string[] 
 					{   row.StationID,
 						row.SellPrice > 0 ? row.SellPrice.ToString(CultureInfo.InvariantCulture) : "",
@@ -1751,7 +1749,7 @@ namespace RegulatedNoise
 						row.Stock > 0 ? row.Stock.ToString(CultureInfo.InvariantCulture) : "",
 						row.SupplyLevel.Display(), 
 						row.SampleDate.ToString(CultureInfo.CurrentCulture) 
-						,distance != EDMilkyway.NO_DISTANCE ? Math.Round(distance,1).ToString(CultureInfo.CurrentCulture) : "N/A"
+						,distance.HasValue ? Math.Round(distance.Value, 1).ToString(CultureInfo.CurrentCulture) : "N/A"
 					});
 					viewItem.UseItemStyleForSubItems = false;
 					SetAgeColor(row.SampleDate, viewItem.SubItems[7]);
@@ -3307,11 +3305,16 @@ namespace RegulatedNoise
 				, route.DemandLevel.Display()
 				, route.Profit.ToString(CultureInfo.InvariantCulture)
 				, Display(age)
-				, route.Distance.ToString(CultureInfo.InvariantCulture)
+				, DisplayDistance(route.Distance)
 			});
 			listViewItem.UseItemStyleForSubItems = false;
 			SetAgeColor(route.Age, listViewItem.SubItems[8]); // color profit according to age
 			return listViewItem;
+		}
+
+		private string DisplayDistance(double? distance)
+		{
+			return distance.HasValue ? Math.Round(distance.Value).ToString(CultureInfo.CurrentCulture) : "N/A";
 		}
 
 		private static string Display(TimeSpan age)
@@ -3730,7 +3733,7 @@ namespace RegulatedNoise
 		{
 			_Splash.CloseDelayed();
 
-			loadSystemData(tbCurrentSystemFromLogs.Text);
+			LoadSystemData(tbCurrentSystemFromLogs.Text);
 			LoadStationData(tbCurrentSystemFromLogs.Text, tbCurrentStationinfoFromLogs.Text);
 
 			showSystemNumbers();
@@ -3861,7 +3864,7 @@ namespace RegulatedNoise
 
 		int animPhase;
 		int phaseCtr;
-		private readonly ICommodities _commodities;
+		private readonly Commodities _commodities;
 		private readonly IValidator<MarketDataRow> _marketDataValidator;
 
 		private void OnTick(object sender, EventArgs args)
@@ -4807,7 +4810,7 @@ namespace RegulatedNoise
 
 				if ((newSystem || newLocation) && (!InitialRun))
 				{
-					loadSystemData(_LoggedSystem);
+					LoadSystemData(_LoggedSystem);
 					LoadStationData(_LoggedSystem, _LoggedLocation);
 
 					if (cbAutoActivateSystemTab.Checked)
@@ -4851,7 +4854,7 @@ namespace RegulatedNoise
 		{
 			string systemName = MarketDataRow.StationIdToSystemName(stationId);
 			return (!cbLimitLightYears.Checked || Distance(systemName))
-						&& (!cbStationToStar.Checked || StationDistance(systemName, MarketDataRow.StationIdToStationName(stationId)));
+						&& (!cbStationToStar.Checked || StationDistance(MarketDataRow.StationIdToStationName(stationId)));
 		}
 
 		private bool IsInPerimeter(MarketDataRow x, bool noRestriction = false)
@@ -4860,7 +4863,7 @@ namespace RegulatedNoise
 				return true;
 			else
 				return (!cbLimitLightYears.Checked || Distance(x.SystemName)) &&
-							(!cbStationToStar.Checked || StationDistance(x.SystemName, x.StationName));
+							(!cbStationToStar.Checked || StationDistance(x.StationName));
 		}
 
 		#region System / Station Tab
@@ -4890,14 +4893,14 @@ namespace RegulatedNoise
 		private void cmdLoadCurrentSystem_Click(object sender, EventArgs e)
 		{
 
-			loadSystemData(tbCurrentSystemFromLogs.Text);
+			LoadSystemData(tbCurrentSystemFromLogs.Text);
 			LoadStationData(tbCurrentSystemFromLogs.Text, tbCurrentStationinfoFromLogs.Text);
 
 			tabCtrlMain.SelectedTab = tabCtrlMain.TabPages["tabSystemData"];
 
 		}
 
-		private void loadSystemData(string systemname, bool isNew = false)
+		private void LoadSystemData(string systemname, bool isNew = false)
 		{
 
 			m_SystemLoadingValues = true;
@@ -4921,7 +4924,14 @@ namespace RegulatedNoise
 
 			if (m_loadedSystemdata != null)
 			{
-				m_currentSystemdata.UpdateFrom(m_loadedSystemdata, UpdateMode.Clone);
+				if (m_currentSystemdata == null)
+				{
+					m_currentSystemdata = new StarSystem(m_loadedSystemdata.Name, m_loadedSystemdata);
+				}
+				else
+				{
+					m_currentSystemdata.UpdateFrom(m_loadedSystemdata, UpdateMode.Clone);
+				}
 				txtSystemName.Text = m_loadedSystemdata.Name;
 				txtSystemX.Text = m_loadedSystemdata.X.ToString("0.00000", CultureInfo.CurrentCulture);
 				txtSystemY.Text = m_loadedSystemdata.Y.ToString("0.00000", CultureInfo.CurrentCulture);
@@ -5020,6 +5030,10 @@ namespace RegulatedNoise
 
 			if (m_loadedStationdata != null)
 			{
+				if (m_currentStationdata == null)
+				{
+					m_currentStationdata = new Station(m_loadedStationdata.Name);
+				}
 				m_currentStationdata.UpdateFrom(m_loadedStationdata, UpdateMode.Clone);
 				txtStationName.Text = m_loadedStationdata.Name;
 				cmbStationMaxLandingPadSize.Text = m_loadedStationdata.MaxLandingPadSize.NToString();
@@ -5030,7 +5044,8 @@ namespace RegulatedNoise
 				cmbStationState.Text = m_loadedStationdata.State.NToString();
 				cmbStationType.Text = m_loadedStationdata.Type.NToString();
 
-				txtStationUpdatedAt.Text = UnixTimeStamp.UnixTimeStampToDateTime(m_loadedStationdata.UpdatedAt).ToString(CultureInfo.CurrentUICulture);
+				txtStationUpdatedAt.Text =
+					UnixTimeStamp.UnixTimeStampToDateTime(m_loadedStationdata.UpdatedAt).ToString(CultureInfo.CurrentUICulture);
 
 				lbStationEconomies.Items.Clear();
 
@@ -5057,7 +5072,9 @@ namespace RegulatedNoise
 				}
 
 				if (GetStations(m_loadedStationdata.System).Any(x => x.Source == EddbDataProvider.SOURCENAME
-										&& x.Name.Equals(m_loadedStationdata.Name, StringComparison.InvariantCultureIgnoreCase)))
+				                                                     &&
+				                                                     x.Name.Equals(m_loadedStationdata.Name,
+					                                                     StringComparison.InvariantCultureIgnoreCase)))
 				{
 					txtStationName.ReadOnly = true;
 					lblStationRenameHint.Visible = true;
@@ -5067,7 +5084,6 @@ namespace RegulatedNoise
 					txtStationName.ReadOnly = false;
 					lblStationRenameHint.Visible = false;
 				}
-
 			}
 			else
 			{
@@ -5676,7 +5692,7 @@ namespace RegulatedNoise
 					m_SystemLoadingValues = false;
 				}
 
-				loadSystemData(m_currentSystemdata.Name);
+				LoadSystemData(m_currentSystemdata.Name);
 				LoadStationData(m_currentSystemdata.Name, txtStationName.Text);
 
 				showSystemNumbers();
@@ -5732,7 +5748,7 @@ namespace RegulatedNoise
 
 				setStationEditable(false);
 
-				loadSystemData(m_currentSystemdata.Name);
+				LoadSystemData(m_currentSystemdata.Name);
 				LoadStationData(m_currentSystemdata.Name, m_currentStationdata.Name);
 
 				showSystemNumbers();
@@ -5816,7 +5832,7 @@ namespace RegulatedNoise
 
 					cmbStationStations.ReadOnly = false;
 
-					loadSystemData(newSystemname, true);
+					LoadSystemData(newSystemname, true);
 					LoadStationData(newSystemname, "", false);
 				}
 			}
@@ -6104,7 +6120,7 @@ namespace RegulatedNoise
 		{
 			if (!m_SystemLoadingValues)
 			{
-				loadSystemData(cmbSystemsAllSystems.SelectedValue.ToString());
+				LoadSystemData(cmbSystemsAllSystems.SelectedValue.ToString());
 				LoadStationData(cmbSystemsAllSystems.SelectedValue.ToString(), "");
 			}
 		}
@@ -6116,7 +6132,7 @@ namespace RegulatedNoise
 				cmbSystemsAllSystems.ReadOnly = false;
 				cmbStationStations.ReadOnly = false;
 
-				loadSystemData(_oldSystemName);
+				LoadSystemData(_oldSystemName);
 				LoadStationData(_oldSystemName, _oldStationName);
 			}
 		}
@@ -6128,7 +6144,7 @@ namespace RegulatedNoise
 				cmbSystemsAllSystems.ReadOnly = false;
 				cmbStationStations.ReadOnly = false;
 
-				loadSystemData(_oldSystemName);
+				LoadSystemData(_oldSystemName);
 				LoadStationData(_oldSystemName, _oldStationName);
 			}
 

@@ -49,10 +49,10 @@
     <Compile Include="DomainModel\IValidator.cs" />
     <Compile Include="DomainModel\Trading\TradeRoute.cs" />
     <Compile Include="DomainModel\ValidationEventArgs.cs" />
+    <Compile Include="Engines\TravelEngine.cs" />
     <Compile Include="Helpers\EnumerableExtensions.cs" />
     <Compile Include="Helpers\SerializationHelpers.cs" />
     <Compile Include="Helpers\StringExtensions.cs" />
-    <Compile Include="ICommodities.cs" />
     <Compile Include="Properties\Annotations.cs" />
     <Compile Include="DataProviders\TradeDangerousDataProvider.cs" />
     <Compile Include="DomainModel\Commodities.cs" />

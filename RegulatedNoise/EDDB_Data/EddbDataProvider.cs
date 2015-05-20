@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using RegulatedNoise.Core;
 using RegulatedNoise.Core.DomainModel;
+using RegulatedNoise.Core.Helpers;
 using RegulatedNoise.Enums_and_Utility_Classes;
 
 namespace RegulatedNoise.EDDB_Data
@@ -39,18 +42,29 @@ namespace RegulatedNoise.EDDB_Data
 
 		private void ImportCommodities(Commodities commodities)
 		{
-			List<Commodity> eddbSystems = ReadFile<List<Commodity>>(EDDB_COMMODITIES_DATAFILE);
-			foreach (Commodity commodity in (IEnumerable<Commodity>)eddbSystems)
+			List<EDCommodities> eddbCommodities = SerializationHelpers.ReadJsonFromFile<List<EDCommodities>>(new FileInfo(EDDB_COMMODITIES_DATAFILE));
+			foreach (EDCommodities commodity in eddbCommodities)
 			{
-				commodities.Update(commodity);
+				commodities.Update(ToCommodity(commodity));
 			}
+		}
+
+		private Commodity ToCommodity(EDCommodities eddbCommodity)
+		{
+			var commodity = new Commodity(eddbCommodity.Name)
+			{
+				AveragePrice = eddbCommodity.AveragePrice
+				, Category = eddbCommodity.Category != null ? eddbCommodity.Category.Name: null
+				, Source = SOURCENAME
+			};
+			return commodity;
 		}
 
 		private void ImportStations(StarMap starMap)
 		{
 			if (File.Exists(EDDB_STATIONS_FULL_DATAFILE))
 			{
-				List<EDStation> eddbStations = ReadFile<List<EDStation>>(EDDB_STATIONS_FULL_DATAFILE);
+				List<EDStation> eddbStations = SerializationHelpers.ReadJsonFromFile<List<EDStation>>(new FileInfo(EDDB_STATIONS_FULL_DATAFILE));
 				foreach (EDStation eddbStation in eddbStations)
 				{
 					starMap.Update(ToStation(eddbStation));
@@ -64,7 +78,7 @@ namespace RegulatedNoise.EDDB_Data
 
 		private Station ToStation(EDStation eddbStation)
 		{
-			Station station = new Station(eddbStation.Name.ToCleanTitleCase())
+			Station station = new Station(Extensions_StringNullable.ToCleanTitleCase(eddbStation.Name))
 			{
 				Allegiance = eddbStation.Allegiance
 				,DistanceToStar = eddbStation.DistanceToStar
@@ -111,28 +125,11 @@ namespace RegulatedNoise.EDDB_Data
 
 		private void ImportSystems(StarMap starMap)
 		{
-			List<EDSystem> eddbSystems = ReadFile<List<EDSystem>>(EDDB_SYSTEMS_DATAFILE);
+			List<EDSystem> eddbSystems = SerializationHelpers.ReadJsonFromFile<List<EDSystem>>(new FileInfo(EDDB_SYSTEMS_DATAFILE));
 			foreach (EDSystem system in (IEnumerable<EDSystem>)eddbSystems)
 			{
-				_systemIdToNameMap.Add(system.Id, system.Name.ToCleanTitleCase());
+				_systemIdToNameMap.Add(system.Id, Extensions_StringNullable.ToCleanTitleCase(system.Name));
 				starMap.Update(ToStarSystem(system));
-			}
-		}
-
-		private static TEntity ReadFile<TEntity>(string filepath)
-		{
-			if (File.Exists(filepath))
-			{
-				using (var reader = new StreamReader(filepath))
-				using (var jreader = new JsonTextReader(reader))
-				{
-					var serializer = new JsonSerializer();
-					return serializer.Deserialize<TEntity>(jreader);
-				}
-			}
-			else
-			{
-				throw new FileNotFoundException(filepath + ": does not exist");
 			}
 		}
 

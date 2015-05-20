@@ -12,7 +12,7 @@ namespace RegulatedNoise.Core.DomainModel
 
 		public bool TryGetValue(string systemName, out StarSystem system)
 		{
-			if (Dictionary != null && Dictionary.TryGetValue(systemName, out system))
+			if (Dictionary != null && Dictionary.TryGetValue(systemName.ToCleanUpperCase(), out system))
 			{
 				return true;
 			}
@@ -21,7 +21,6 @@ namespace RegulatedNoise.Core.DomainModel
 				system = null;
 				return false;
 			}
-			;
 		}
 	}
 }

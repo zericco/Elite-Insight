@@ -65,7 +65,7 @@ namespace RegulatedNoise.Core.Helpers
 			{
 				using (var jreader = new JsonTextReader(reader))
 				{
-					var serializer = new JsonSerializer();
+					var serializer = Serializer;
 					return serializer.Deserialize<TObject>(jreader);
 				}
 			}

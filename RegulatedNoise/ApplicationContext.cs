@@ -47,26 +47,11 @@ namespace RegulatedNoise
 			}
 		}
 
-		private static EDMilkyway _milkyway;
 		private static dsCommodities _commoditiesLocalisation;
-        private static Eddn _eddn;
+		private static Eddn _eddn;
 		private static GalacticMarket _galacticMarket;
 		private static LogFilesScanner _eliteLogFilesScanner;
 		private static DataModel _model;
-
-		public static EDMilkyway Milkyway
-		{
-			get
-			{
-				if (_milkyway == null)
-				{
-					_milkyway = new EDMilkyway();
-					_milkyway.ImportSystemLocations();
-					Trace.TraceInformation("  - system locations imported");
-				}
-				return _milkyway;
-			}
-		}
 
 		public static dsCommodities CommoditiesLocalisation
 		{
@@ -81,14 +66,14 @@ namespace RegulatedNoise
 			}
 		}
 
-        public static Eddn Eddn
+		public static Eddn Eddn
 		{
 			get
 			{
 				if (_eddn == null)
 				{
 					EventBus.InitializationStart("prepare EDDN interface");
-                    _eddn = new Eddn(CommoditiesLocalisation, RegulatedNoiseSettings);
+					_eddn = new Eddn(CommoditiesLocalisation, RegulatedNoiseSettings);
 					Trace.TraceInformation("  - EDDN object created");
 					if (RegulatedNoiseSettings.StartListeningEddnOnLoad)
 					{
@@ -132,33 +117,14 @@ namespace RegulatedNoise
 			get
 			{
 				if (_model == null)
+				{
 					_model = new DataModel(new dsCommodities(), new MarketDataValidator());
+					var eddb = new EddbDataProvider();
+					eddb.ImportData(_model);
+				}
 				return _model;
 			}
 			set { _model = value; }
 		}
-	}
-
-	internal interface IStarMap
-	{
-		PlausibilityState IsImplausible(MarketDataRow marketDataRow, bool simpleCheck);
-		IEnumerable<Commodity> CloneCommodities();
-		double DistanceInLightYears(string originSystem, string targetSystem);
-		void SetCommodities(IEnumerable<Commodity> commodities);
-		void SaveRNCommodityData(string jsonFilepath, bool backupOldFile);
-		string[] GetStationNames(string system);
-		int? GetStationDistance(string systemName, string stationName);
-		bool SystemExists(string systemName);
-		
-		IEnumerable<Station> GetStations();
-	
-		IEnumerable<Station> GetStations(string systemName);
-		IEnumerable<StarSystem> GetSystems();
-		
-		StarSystem GetSystem(string systemname);
-		Station GetStation(string systemname, string stationname);
-		
-		void ChangeAddSystem(StarSystem existing, string actual);
-		void ChangeAddStation(string currentSystemName, Station currentStationdata, string oldStationName);
 	}
 }
