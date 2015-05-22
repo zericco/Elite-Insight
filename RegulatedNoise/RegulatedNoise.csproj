@@ -11,13 +11,14 @@
     <AssemblyName>RegulatedNoise</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
+    <OutputPath>$(SolutionDir)$(Configuration)\bin\$(AssemblyName)</OutputPath>
+    <IntermediateOutputPath>$(SolutionDir)$(Configuration)\obj\$(AssemblyName)</IntermediateOutputPath>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>TRACE;DEBUG;NO_SPLASH</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -27,44 +28,10 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE;DukeJones</DefineConstants>
+    <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug DJ|AnyCPU'">
-    <DebugSymbols>true</DebugSymbols>
-    <OutputPath>bin\Debug DJ\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;DukeJones </DefineConstants>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <DebugType>full</DebugType>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <ErrorReport>prompt</ErrorReport>
-    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
-    <Prefer32Bit>true</Prefer32Bit>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug_Live|AnyCPU'">
-    <DebugSymbols>true</DebugSymbols>
-    <OutputPath>F:\Games\ED\sonstiges\RegulatedNoise.v1.81\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;DukeJones</DefineConstants>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <DebugType>full</DebugType>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <ErrorReport>prompt</ErrorReport>
-    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
-    <Prefer32Bit>true</Prefer32Bit>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug DJ ep|AnyCPU'">
-    <DebugSymbols>true</DebugSymbols>
-    <OutputPath>bin\Debug DJ ep\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;DukeJones ep_Debug1 NO_SPLASH</DefineConstants>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <DebugType>full</DebugType>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <ErrorReport>prompt</ErrorReport>
-    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
-    <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup>
     <StartupObject>RegulatedNoise.Program</StartupObject>
@@ -140,7 +107,6 @@
     <Compile Include="EDDB_Data\EDMarketData.cs" />
     <Compile Include="EDDN.cs" />
     <Compile Include="EddnMessageEventArgs.cs" />
-    <Compile Include="EliteInteractions\LogFilesScanner.cs" />
     <Compile Include="Enums and Utility Classes\Controls_ext.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -171,10 +137,8 @@
     <Compile Include="Enums and Utility Classes\SerializableDictionary.cs" />
     <Compile Include="Enums and Utility Classes\StationHistory.cs" />
     <Compile Include="Enums and Utility Classes\UnixTimeStamp.cs" />
-    <Compile Include="EventBus.cs" />
     <Compile Include="Exceptions\InitializationException.cs" />
     <Compile Include="MarketDataValidator.cs" />
-    <Compile Include="NotificationEventArgs.cs" />
     <Compile Include="MRmPTestTab\MRmPTestTab.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -808,7 +772,9 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="EliteInteractions\" />
+  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\EdClasses\EdClasses.csproj">
       <Project>{236a934b-5543-4751-baa2-018dfa825271}</Project>

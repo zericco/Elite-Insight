@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Windows.Forms.DataVisualization.Charting;
 
-namespace RegulatedNoise
+namespace RegulatedNoise.Core.Messaging
 {
-	internal static class EventBus
+	public static class EventBus
 	{
 		public static event EventHandler<NotificationEventArgs> OnNotificationEvent;
 

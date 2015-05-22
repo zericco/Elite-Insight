@@ -4,7 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using RegulatedNoise.EliteInteractions;
+using RegulatedNoise.Core.EliteInteractions;
 
 namespace RegulatedNoise.Test.EliteInteractions
 {
@@ -42,7 +42,7 @@ namespace RegulatedNoise.Test.EliteInteractions
 
         private LogFilesScanner NewScanner()
         {
-            return new LogFilesScanner(new RegulatedNoiseSettings() { ProductsPath = "playground/Products" ,PilotsName = "Bobby" });
+            return new LogFilesScanner("playground/Products");
         }
     }
 }

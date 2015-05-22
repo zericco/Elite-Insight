@@ -9,14 +9,12 @@
 #endregion
 
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using RegulatedNoise.Core;
 using RegulatedNoise.Core.DomainModel;
+using RegulatedNoise.Core.EliteInteractions;
+using RegulatedNoise.Core.Messaging;
 using RegulatedNoise.EDDB_Data;
-using RegulatedNoise.EliteInteractions;
 using RegulatedNoise.Enums_and_Utility_Classes;
 
 namespace RegulatedNoise
@@ -105,7 +103,7 @@ namespace RegulatedNoise
 			{
 				if (_eliteLogFilesScanner == null)
 				{
-					_eliteLogFilesScanner = new LogFilesScanner(RegulatedNoiseSettings);
+					_eliteLogFilesScanner = new LogFilesScanner(RegulatedNoiseSettings.ProductsPath);
 				}
 				return _eliteLogFilesScanner;
 			}

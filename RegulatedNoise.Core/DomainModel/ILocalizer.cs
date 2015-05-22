@@ -3,6 +3,6 @@
 	public interface ILocalizer
 	{
 		string TranslateToCurrent(string toLocalize);
-		string TranslateInEnglish(string commodityName);
+		string TranslateInEnglish(string toLocalize);
 	}
 }

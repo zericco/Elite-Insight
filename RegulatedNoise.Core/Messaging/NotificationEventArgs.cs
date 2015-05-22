@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace RegulatedNoise
+namespace RegulatedNoise.Core.Messaging
 {
 	public class NotificationEventArgs : EventArgs
 	{

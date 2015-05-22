@@ -1,15 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using RegulatedNoise.Core.DataProviders;
 using RegulatedNoise.Core.DomainModel;
-using RegulatedNoise.EDDB_Data;
-using RegulatedNoise.Enums_and_Utility_Classes;
 
 namespace RegulatedNoise.Test.DataProviders
 {

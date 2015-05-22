@@ -1,19 +1,40 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using System;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using RegulatedNoise.Core.DataProviders.Eddn;
 using RegulatedNoise.Core.DomainModel;
-using RegulatedNoise.EDDB_Data;
-using RegulatedNoise.Enums_and_Utility_Classes;
 
 namespace RegulatedNoise.Test.DataProviders
 {
-    [TestClass]
-    public class EddbDataProviderTest
-    {
-        [TestMethod]
-        public void i_can_import_data()
-        {
-            var eddb = new EddbDataProvider();
-            var model = new DataModel(new dsCommodities(), new MarketDataValidator());
-            eddb.ImportData(model);
-        }
-    }
+	[TestClass]
+	public class EddbDataProviderTest
+	{
+		[TestMethod]
+		public void i_can_import_data()
+		{
+			var eddb = new EddbDataProvider();
+			var model = new DataModel(new TestLocalizer(), new TestValidator());
+			eddb.ImportData(model);
+		}
+	}
+
+	public class TestValidator : IValidator<MarketDataRow>
+	{
+		public PlausibilityState Validate(MarketDataRow entity)
+		{
+			throw new NotImplementedException();
+		}
+	}
+
+	internal class TestLocalizer : ILocalizer
+	{
+		public string TranslateToCurrent(string toLocalize)
+		{
+			return toLocalize;
+		}
+
+		public string TranslateInEnglish(string toLocalize)
+		{
+			return toLocalize;
+		}
+	}
 }

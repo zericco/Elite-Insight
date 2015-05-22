@@ -11,12 +11,13 @@
     <AssemblyName>RegulatedNoise.Test</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
+    <OutputPath>$(SolutionDir)$(Configuration)\tests\$(AssemblyName)</OutputPath>
+    <IntermediateOutputPath>$(SolutionDir)$(Configuration)\obj\$(AssemblyName)</IntermediateOutputPath>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -24,7 +25,6 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -56,8 +56,6 @@
     <Compile Include="DomainModel\StarSystemTest.cs" />
     <Compile Include="DomainModel\StationTest.cs" />
     <Compile Include="EddnMessageTest.cs" />
-    <Compile Include="EddnTest.cs" />
-    <Compile Include="EDMilyWayTest.cs" />
     <Compile Include="EliteInteractions\LogFilesScannerTest.cs" />
     <Compile Include="MarketDataRowTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -76,10 +74,6 @@
     <ProjectReference Include="..\RegulatedNoise.Core\RegulatedNoise.Core.csproj">
       <Project>{1c6e84c0-a944-48be-b196-6e6278b1f7d7}</Project>
       <Name>RegulatedNoise.Core</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\RegulatedNoise\RegulatedNoise.csproj">
-      <Project>{D720EB9A-C879-4E3B-AA19-B820E8192B7A}</Project>
-      <Name>RegulatedNoise</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

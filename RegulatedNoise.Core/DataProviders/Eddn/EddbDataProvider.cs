@@ -1,22 +1,28 @@
-﻿using System;
+﻿#region file header
+// ////////////////////////////////////////////////////////////////////
+// ///
+// ///  
+// /// 22.05.2015
+// ///
+// ////////////////////////////////////////////////////////////////////
+#endregion
+
+using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
-using RegulatedNoise.Core;
 using RegulatedNoise.Core.DomainModel;
 using RegulatedNoise.Core.Helpers;
 using RegulatedNoise.Core.Messaging;
-using RegulatedNoise.Enums_and_Utility_Classes;
 
-namespace RegulatedNoise.EDDB_Data
+namespace RegulatedNoise.Core.DataProviders.Eddn
 {
 	internal class EddbDataProvider
 	{
-		private readonly Dictionary<int,string> _systemIdToNameMap;
+		private readonly Dictionary<int, string> _systemIdToNameMap;
+		private readonly Dictionary<int, string> _commodityNameMap;
 		private const string EDDB_COMMODITIES_DATAFILE = @"./Data/commodities.json";
 		private const string EDDB_STATIONS_LITE_DATAFILE = @"./Data/stations_lite.json";
 		private const string EDDB_STATIONS_FULL_DATAFILE = @"./Data/stations.json";
@@ -26,11 +32,12 @@ namespace RegulatedNoise.EDDB_Data
 		private const string EDDB_SYSTEMS_URL = @"http://eddb.io/archive/v3/systems.json";
 		private const string EDDB_STATIONS_LITE_URL = @"http://eddb.io/archive/v3/stations_lite.json";
 		public const string SOURCENAME = "EDDB";
-		//private const string EDDB_STATIONS_FULL_URL = @"http://eddb.io/archive/v3/stations.json";
+		private const string EDDB_STATIONS_FULL_URL = @"http://eddb.io/archive/v3/stations.json";
 
 		public EddbDataProvider()
 		{
 			_systemIdToNameMap = new Dictionary<int, string>();
+			_commodityNameMap = new Dictionary<int, string>();
 		}
 
 		public void ImportData(DataModel model)
@@ -38,48 +45,84 @@ namespace RegulatedNoise.EDDB_Data
 			DownloadDataFiles();
 			ImportSystems(model.StarMap);
 			ImportCommodities(model.Commodities);
-			ImportStations(model.StarMap);
+			ImportStations(model.StarMap, model.GalacticMarket);
 		}
 
 		private void ImportCommodities(Commodities commodities)
 		{
-			List<EDCommodities> eddbCommodities = SerializationHelpers.ReadJsonFromFile<List<EDCommodities>>(new FileInfo(EDDB_COMMODITIES_DATAFILE));
-			foreach (EDCommodities commodity in eddbCommodities)
+			List<EddbCommodity> eddbCommodities = SerializationHelpers.ReadJsonFromFile<List<EddbCommodity>>(new FileInfo(EDDB_COMMODITIES_DATAFILE));
+			foreach (EddbCommodity commodity in eddbCommodities)
 			{
+				_commodityNameMap.Add(commodity.Id, commodity.Name);
 				commodities.Update(ToCommodity(commodity));
 			}
 		}
 
-		private Commodity ToCommodity(EDCommodities eddbCommodity)
+		private Commodity ToCommodity(EddbCommodity eddbCommodity)
 		{
 			var commodity = new Commodity(eddbCommodity.Name)
 			{
 				AveragePrice = eddbCommodity.AveragePrice
-				, Category = eddbCommodity.Category != null ? eddbCommodity.Category.Name: null
-				, Source = SOURCENAME
+				,Category = eddbCommodity.Category != null ? eddbCommodity.Category.Name : null
+				,Source = SOURCENAME
 			};
 			return commodity;
 		}
 
-		private void ImportStations(StarMap starMap)
+		private void ImportStations(StarMap starMap, GalacticMarket market)
 		{
 			if (File.Exists(EDDB_STATIONS_FULL_DATAFILE))
 			{
-				List<EDStation> eddbStations = SerializationHelpers.ReadJsonFromFile<List<EDStation>>(new FileInfo(EDDB_STATIONS_FULL_DATAFILE));
-				foreach (EDStation eddbStation in eddbStations)
+				List<EddbStation> eddbStations = SerializationHelpers.ReadJsonFromFile<List<EddbStation>>(new FileInfo(EDDB_STATIONS_FULL_DATAFILE));
+				foreach (EddbStation eddbStation in eddbStations)
 				{
 					starMap.Update(ToStation(eddbStation));
+					ImportMarketData(eddbStation, market);
 				}
 			}
 			else if (File.Exists(EDDB_STATIONS_LITE_DATAFILE))
 			{
-				//imports only stations
+				List<EddbStation> eddbStations = SerializationHelpers.ReadJsonFromFile<List<EddbStation>>(new FileInfo(EDDB_STATIONS_FULL_DATAFILE));
+				foreach (EddbStation eddbStation in eddbStations)
+				{
+					starMap.Update(ToStation(eddbStation));
+				}
 			}
 		}
 
-		private Station ToStation(EDStation eddbStation)
+		private void ImportMarketData(EddbStation station, GalacticMarket market)
 		{
-			Station station = new Station(Extensions_StringNullable.ToCleanTitleCase(eddbStation.Name))
+			if (station.MarketDatas == null) return;
+			foreach (EddbStation.MarketData marketData in station.MarketDatas)
+			{
+				market.Update(ToMarketData(marketData, station.Name, RetrieveSystemName(station.SystemId)));
+			}
+		}
+
+		private MarketDataRow ToMarketData(EddbStation.MarketData marketData, string stationName, string systemName)
+		{
+			return new MarketDataRow()
+			{
+				CommodityName = RetrieveCommodityName(marketData.CommodityId)
+				, BuyPrice = marketData.BuyPrice
+				, Demand = marketData.Demand
+				, SellPrice = marketData.SellPrice
+				, StationName = stationName
+				, Source = SOURCENAME
+				, Stock = marketData.Supply
+				, SystemName = systemName
+				, SampleDate = UnixTimeStamp.ToDateTime(marketData.CollectedAt)
+			};
+		}
+
+		private string RetrieveCommodityName(int commodityId)
+		{
+			return _commodityNameMap[commodityId];
+		}
+
+		private Station ToStation(EddbStation eddbStation)
+		{
+			Station station = new Station(eddbStation.Name.ToCleanTitleCase())
 			{
 				Allegiance = eddbStation.Allegiance
 				,DistanceToStar = eddbStation.DistanceToStar
@@ -111,58 +154,33 @@ namespace RegulatedNoise.EDDB_Data
 			return _systemIdToNameMap[systemId];
 		}
 
-		private static LandingPadSize? ParseLandingPadSize(string maxLandingPadSize)
-		{
-			LandingPadSize size;
-			if (Enum.TryParse(maxLandingPadSize, true, out size))
-			{
-				return size;
-			}
-			else
-			{
-				return null;
-			}
-		}
-
 		private void ImportSystems(StarMap starMap)
 		{
-			List<EDSystem> eddbSystems = SerializationHelpers.ReadJsonFromFile<List<EDSystem>>(new FileInfo(EDDB_SYSTEMS_DATAFILE));
-			foreach (EDSystem system in (IEnumerable<EDSystem>)eddbSystems)
+			List<EddbSystem> eddbSystems = SerializationHelpers.ReadJsonFromFile<List<EddbSystem>>(new FileInfo(EDDB_SYSTEMS_DATAFILE));
+			foreach (EddbSystem system in (IEnumerable<EddbSystem>)eddbSystems)
 			{
-				_systemIdToNameMap.Add(system.Id, Extensions_StringNullable.ToCleanTitleCase(system.Name));
+				_systemIdToNameMap.Add(system.Id, system.Name.ToUpperInvariant());
 				starMap.Update(ToStarSystem(system));
 			}
 		}
 
-		private static StarSystem ToStarSystem(EDSystem eddbSystem)
+		private static StarSystem ToStarSystem(EddbSystem eddbSystem)
 		{
-			var starSystem = new StarSystem(eddbSystem.Name)
+			var starSystem = new StarSystem(eddbSystem.Name.ToUpperInvariant())
 			{
 				Allegiance = eddbSystem.Allegiance
-				 ,
-				Faction = eddbSystem.Faction
-				 ,
-				Government = eddbSystem.Government
-				 ,
-				NeedsPermit = ToNBool(eddbSystem.NeedsPermit)
-				 ,
-				Population = eddbSystem.Population
-				 ,
-				PrimaryEconomy = eddbSystem.PrimaryEconomy
-				 ,
-				Security = eddbSystem.Security
-				 ,
-				Source = SOURCENAME
-				 ,
-				State = eddbSystem.State
-				 ,
-				UpdatedAt = eddbSystem.UpdatedAt
-				 ,
-				X = eddbSystem.X
-				 ,
-				Y = eddbSystem.Y
-				 ,
-				Z = eddbSystem.Z
+				 ,Faction = eddbSystem.Faction
+				 ,Government = eddbSystem.Government
+				 ,NeedsPermit = ToNBool(eddbSystem.NeedsPermit)
+				 ,Population = eddbSystem.Population
+				 ,PrimaryEconomy = eddbSystem.PrimaryEconomy
+				 ,Security = eddbSystem.Security
+				 ,Source = SOURCENAME
+				 ,State = eddbSystem.State
+				 ,UpdatedAt = eddbSystem.UpdatedAt
+				 ,X = eddbSystem.X
+				 ,Y = eddbSystem.Y
+				 ,Z = eddbSystem.Z
 			};
 			return starSystem;
 		}
@@ -190,6 +208,19 @@ namespace RegulatedNoise.EDDB_Data
 			}
 		}
 
+		private static LandingPadSize? ParseLandingPadSize(string maxLandingPadSize)
+		{
+			LandingPadSize size;
+			if (Enum.TryParse(maxLandingPadSize, true, out size))
+			{
+				return size;
+			}
+			else
+			{
+				return null;
+			}
+		}
+
 		private static void DownloadDataFiles()
 		{
 			var tasks = new List<Task>();
@@ -207,6 +238,10 @@ namespace RegulatedNoise.EDDB_Data
 			{
 				tasks.Add(Task.Run(() => DownloadDataFile(new Uri(EDDB_STATIONS_LITE_URL), EDDB_STATIONS_LITE_DATAFILE,
 					 "eddb stations lite data")));
+			}
+			if (!File.Exists(EDDB_STATIONS_FULL_DATAFILE))
+			{
+				Task.Run(() => DownloadDataFile(new Uri(EDDB_STATIONS_FULL_URL), EDDB_STATIONS_FULL_DATAFILE, "eddb stations full data"));
 			}
 			if (tasks.Any())
 			{

@@ -11,12 +11,13 @@
     <AssemblyName>RegulatedNoise.Core</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
+    <OutputPath>$(SolutionDir)$(Configuration)\bin\$(AssemblyName)</OutputPath>
+    <IntermediateOutputPath>$(SolutionDir)$(Configuration)\obj\$(AssemblyName)</IntermediateOutputPath>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -24,7 +25,6 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -45,14 +45,24 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Algorithms\Levenshtein.cs" />
+    <Compile Include="DataProviders\Eddn\EddbCommodity.cs" />
+    <Compile Include="DataProviders\Eddn\EddbDataProvider.cs" />
+    <Compile Include="DataProviders\Eddn\EddbStation.cs" />
+    <Compile Include="DataProviders\Eddn\EddbSystem.cs" />
+    <Compile Include="DataProviders\Eddn\v1\EddnMessage.cs" />
+    <Compile Include="DataProviders\Eddn\v2\EddnMessage.cs" />
     <Compile Include="DomainModel\ILocalizer.cs" />
     <Compile Include="DomainModel\IValidator.cs" />
     <Compile Include="DomainModel\Trading\TradeRoute.cs" />
     <Compile Include="DomainModel\ValidationEventArgs.cs" />
+    <Compile Include="EliteInteractions\LogFilesScanner.cs" />
     <Compile Include="Engines\TravelEngine.cs" />
     <Compile Include="Helpers\EnumerableExtensions.cs" />
     <Compile Include="Helpers\SerializationHelpers.cs" />
     <Compile Include="Helpers\StringExtensions.cs" />
+    <Compile Include="Helpers\UnixTimeStamp.cs" />
+    <Compile Include="Messaging\EventBus.cs" />
+    <Compile Include="Messaging\NotificationEventArgs.cs" />
     <Compile Include="Properties\Annotations.cs" />
     <Compile Include="DataProviders\TradeDangerousDataProvider.cs" />
     <Compile Include="DomainModel\Commodities.cs" />
@@ -75,6 +85,7 @@
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

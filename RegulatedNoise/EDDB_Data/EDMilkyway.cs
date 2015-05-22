@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms.DataVisualization.Charting;
 using Newtonsoft.Json;
 using RegulatedNoise.Core.DomainModel;
+using RegulatedNoise.Core.Messaging;
 using RegulatedNoise.Exceptions;
 
 namespace RegulatedNoise.EDDB_Data
