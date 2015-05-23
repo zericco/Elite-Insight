@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
 VisualStudioVersion = 12.0.31101.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RegulatedNoise", "RegulatedNoise\RegulatedNoise.csproj", "{D720EB9A-C879-4E3B-AA19-B820E8192B7A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RegulatedNoise", "sources\RegulatedNoise\RegulatedNoise.csproj", "{D720EB9A-C879-4E3B-AA19-B820E8192B7A}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{48173B0B-160E-4748-99F8-4079BAAE5754}"
 	ProjectSection(SolutionItems) = preProject
@@ -11,11 +11,15 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		ToDo.txt = ToDo.txt
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EdClasses", "EdClasses\EdClasses.csproj", "{236A934B-5543-4751-BAA2-018DFA825271}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EdClasses", "sources\EdClasses\EdClasses.csproj", "{236A934B-5543-4751-BAA2-018DFA825271}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RegulatedNoise.Test", "RegulatedNoise.Test\RegulatedNoise.Test.csproj", "{2B1A45BA-2AD7-4B03-B777-5BB1B8FD9019}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RegulatedNoise.Test", "tests\RegulatedNoise.Test\RegulatedNoise.Test.csproj", "{2B1A45BA-2AD7-4B03-B777-5BB1B8FD9019}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RegulatedNoise.Core", "RegulatedNoise.Core\RegulatedNoise.Core.csproj", "{1C6E84C0-A944-48BE-B196-6E6278B1F7D7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RegulatedNoise.Core", "sources\RegulatedNoise.Core\RegulatedNoise.Core.csproj", "{1C6E84C0-A944-48BE-B196-6E6278B1F7D7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RegulatedNoise.EDDN", "sources\RegulatedNoise.EDDN\RegulatedNoise.EDDN.csproj", "{ABD135F3-C878-4837-927F-6117649119EF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RegulatedNoise.OCR", "sources\RegulatedNoise.OCR\RegulatedNoise.OCR.csproj", "{A3334F73-4CA5-45D6-A7BF-844DE11464F1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -69,6 +73,26 @@ Global
 		{1C6E84C0-A944-48BE-B196-6E6278B1F7D7}.Release|ARM.ActiveCfg = Release|Any CPU
 		{1C6E84C0-A944-48BE-B196-6E6278B1F7D7}.Release|x64.ActiveCfg = Release|Any CPU
 		{1C6E84C0-A944-48BE-B196-6E6278B1F7D7}.Release|x86.ActiveCfg = Release|Any CPU
+		{ABD135F3-C878-4837-927F-6117649119EF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ABD135F3-C878-4837-927F-6117649119EF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ABD135F3-C878-4837-927F-6117649119EF}.Debug|ARM.ActiveCfg = Debug|Any CPU
+		{ABD135F3-C878-4837-927F-6117649119EF}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{ABD135F3-C878-4837-927F-6117649119EF}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{ABD135F3-C878-4837-927F-6117649119EF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ABD135F3-C878-4837-927F-6117649119EF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ABD135F3-C878-4837-927F-6117649119EF}.Release|ARM.ActiveCfg = Release|Any CPU
+		{ABD135F3-C878-4837-927F-6117649119EF}.Release|x64.ActiveCfg = Release|Any CPU
+		{ABD135F3-C878-4837-927F-6117649119EF}.Release|x86.ActiveCfg = Release|Any CPU
+		{A3334F73-4CA5-45D6-A7BF-844DE11464F1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A3334F73-4CA5-45D6-A7BF-844DE11464F1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A3334F73-4CA5-45D6-A7BF-844DE11464F1}.Debug|ARM.ActiveCfg = Debug|Any CPU
+		{A3334F73-4CA5-45D6-A7BF-844DE11464F1}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{A3334F73-4CA5-45D6-A7BF-844DE11464F1}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{A3334F73-4CA5-45D6-A7BF-844DE11464F1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A3334F73-4CA5-45D6-A7BF-844DE11464F1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A3334F73-4CA5-45D6-A7BF-844DE11464F1}.Release|ARM.ActiveCfg = Release|Any CPU
+		{A3334F73-4CA5-45D6-A7BF-844DE11464F1}.Release|x64.ActiveCfg = Release|Any CPU
+		{A3334F73-4CA5-45D6-A7BF-844DE11464F1}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
