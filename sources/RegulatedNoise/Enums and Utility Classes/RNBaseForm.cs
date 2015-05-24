@@ -1,19 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Diagnostics;
 using System.Windows.Forms;
 
 namespace RegulatedNoise.Enums_and_Utility_Classes
 {
 	public partial class RNBaseForm : Form
 	{
-		public virtual string thisObjectName { get { return ""; } }
-
 		private bool m_LoadingDone = false;
 
 		public RNBaseForm()
@@ -21,75 +13,72 @@ namespace RegulatedNoise.Enums_and_Utility_Classes
 			InitializeComponent();
 		}
 
-		protected void loadWindowPosition()
+		protected void LoadWindowPosition()
 		{
 
-			if (Extensions_Control.IsDesignMode(this) || ApplicationContext.RegulatedNoiseSettings == null)
+			if (this.IsDesignMode() || ApplicationContext.RegulatedNoiseSettings == null)
 				return;
 
-			string Classname = this.GetType().Name;
-			WindowData FormPosition;
+			string classname = this.GetType().Name;
+			WindowData formPosition;
 
-			if (ApplicationContext.RegulatedNoiseSettings.WindowBaseData.TryGetValue(Classname, out FormPosition))
+			if (ApplicationContext.RegulatedNoiseSettings.WindowBaseData.TryGetValue(classname, out formPosition))
 			{
 
-				if (FormPosition.Position.Height > -1)
+				if (formPosition.Position.Height > -1)
 				{
-					this.Top = FormPosition.Position.Top;
-					this.Left = FormPosition.Position.Left;
-					this.Height = FormPosition.Position.Height;
-					this.Width = FormPosition.Position.Width;
-
-					this.WindowState = FormPosition.State;
+					Top = formPosition.Position.Top;
+					Left = formPosition.Position.Left;
+					Height = formPosition.Position.Height;
+					Width = formPosition.Position.Width;
+					WindowState = formPosition.State;
 				}
 				else
 				{
-					FormPosition.Position.Y = this.Top;
-					FormPosition.Position.X = this.Left;
-					FormPosition.Position.Height = this.Height;
-					FormPosition.Position.Width = this.Width;
-
-					FormPosition.State = this.WindowState;
+					formPosition.Position.Y = Top;
+					formPosition.Position.X = Left;
+					formPosition.Position.Height = Height;
+					formPosition.Position.Width = Width;
+					formPosition.State = WindowState;
 				}
 
 			}
 			else
 			{
-				ApplicationContext.RegulatedNoiseSettings.WindowBaseData.Add(Classname, new WindowData());
-				loadWindowPosition();
+				ApplicationContext.RegulatedNoiseSettings.WindowBaseData.Add(classname, new WindowData());
+				LoadWindowPosition();
 				//MessageBox.Show("Not positioninfo for <" + Classname + "> found !");
 			}
-
 			m_LoadingDone = true;
 		}
 
-		protected void saveWindowPosition()
+		protected void SaveWindowPosition()
 		{
 			bool changed = false;
 
-			string Classname = this.GetType().Name;
-			WindowData FormPosition;
+			string classname = GetType().Name;
+			WindowData formPosition;
 
-			if (ApplicationContext.RegulatedNoiseSettings.WindowBaseData.TryGetValue(Classname, out FormPosition))
+			if (ApplicationContext.RegulatedNoiseSettings.WindowBaseData.TryGetValue(classname, out formPosition))
 			{
-				if (this.WindowState != FormWindowState.Minimized)
-					if (FormPosition.State != this.WindowState)
+				if (WindowState != FormWindowState.Minimized)
+					if (formPosition.State != this.WindowState)
 					{
-						FormPosition.State = this.WindowState;
+						formPosition.State = this.WindowState;
 						changed = true;
 					}
 
 				if (this.WindowState == FormWindowState.Normal)
 				{
-					if ((FormPosition.Position.Y != this.Top) ||
-						 (FormPosition.Position.X != this.Left) ||
-						 (FormPosition.Position.Height != this.Height) ||
-						 (FormPosition.Position.Width != this.Width))
+					if ((formPosition.Position.Y != this.Top) ||
+						 (formPosition.Position.X != this.Left) ||
+						 (formPosition.Position.Height != this.Height) ||
+						 (formPosition.Position.Width != this.Width))
 					{
-						FormPosition.Position.Y = this.Top;
-						FormPosition.Position.X = this.Left;
-						FormPosition.Position.Height = this.Height;
-						FormPosition.Position.Width = this.Width;
+						formPosition.Position.Y = this.Top;
+						formPosition.Position.X = this.Left;
+						formPosition.Position.Height = this.Height;
+						formPosition.Position.Width = this.Width;
 
 						changed = true;
 					}
@@ -102,41 +91,41 @@ namespace RegulatedNoise.Enums_and_Utility_Classes
 			}
 		}
 
-		protected void Form_Resize(object sender, System.EventArgs e)
+		protected void Form_Resize(object sender, EventArgs e)
 		{
 			if (m_LoadingDone)
                 try
                 {
-                    saveWindowPosition();
+                    SaveWindowPosition();
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Trace.TraceError("unable to save window position " + ex);
+                    Trace.TraceError("unable to save window position " + ex);
                 }
         }
 
-		protected void Form_ResizeEnd(object sender, System.EventArgs e)
+		protected void Form_ResizeEnd(object sender, EventArgs e)
 		{
 			if (m_LoadingDone)
                 try
                 {
-                    saveWindowPosition();
+                    SaveWindowPosition();
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Trace.TraceError("unable to save window position " + ex);
+                    Trace.TraceError("unable to save window position " + ex);
                 }
 		}
 
-		private void Form_Shown(object sender, System.EventArgs e)
+		private void Form_Shown(object sender, EventArgs e)
 		{
             try
             {
-                loadWindowPosition();
+                LoadWindowPosition();
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Trace.TraceError("unable to load window position " + ex);
+                Trace.TraceError("unable to load window position " + ex);
             }
 		}
 

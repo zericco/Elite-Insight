@@ -978,7 +978,7 @@ namespace RegulatedNoise.EDDB_Data
 			// read file into a string and deserialize JSON to a type
 			try
 			{
-				EventBus.InitializationStart("create milkyway...");
+				EventBus.Start("create milkyway...");
 				DownloadDataFiles();
 				// 1. load the EDDN data
 				{
@@ -986,60 +986,60 @@ namespace RegulatedNoise.EDDB_Data
 
 					if (needPriceCalculation || ApplicationContext.RegulatedNoiseSettings.LoadStationsJSON)
 					{
-						EventBus.InitializationStart("loading stations from <stations.json> (calculation of plausibility limits required)");
+						EventBus.Start("loading stations from <stations.json> (calculation of plausibility limits required)");
 						LoadStationData(EDDB_STATIONS_FULL_DATAFILE, DataSource.Data_EDDB, false);
-						EventBus.InitializationCompleted("loading stations from <stations.json> (calculation of plausibility limits required)");
-						EventBus.InitializationProgress("(" + GetStations(DataSource.Data_EDDB).Count + " stations loaded)");
+						EventBus.Completed("loading stations from <stations.json> (calculation of plausibility limits required)");
+						EventBus.Progress("(" + GetStations(DataSource.Data_EDDB).Count + " stations loaded)");
 					}
 					else
 					{
 						// look which stations-file we can get
 						if (File.Exists(EDDB_STATIONS_LITE_DATAFILE))
 						{
-							EventBus.InitializationStart("loading stations from <stations_lite.json>");
+							EventBus.Start("loading stations from <stations_lite.json>");
 							LoadStationData(EDDB_STATIONS_LITE_DATAFILE, DataSource.Data_EDDB, false);
-							EventBus.InitializationCompleted("loading stations from <stations_lite.json>");
-							EventBus.InitializationProgress("(" + GetStations(DataSource.Data_EDDB).Count + " stations loaded)");
+							EventBus.Completed("loading stations from <stations_lite.json>");
+							EventBus.Progress("(" + GetStations(DataSource.Data_EDDB).Count + " stations loaded)");
 						}
 						else
 						{
-							EventBus.InitializationStart("loading stations from <stations.json>");
+							EventBus.Start("loading stations from <stations.json>");
 							LoadStationData(EDDB_STATIONS_FULL_DATAFILE, DataSource.Data_EDDB, false);
-							EventBus.InitializationCompleted("loading stations from <stations.json>");
-							EventBus.InitializationProgress("(" + GetStations(DataSource.Data_EDDB).Count + " stations loaded)");
+							EventBus.Completed("loading stations from <stations.json>");
+							EventBus.Progress("(" + GetStations(DataSource.Data_EDDB).Count + " stations loaded)");
 						}
 					}
 
 					// load the systems
-					EventBus.InitializationStart("...loading systems from <systems.json>...");
+					EventBus.Start("...loading systems from <systems.json>...");
 					LoadSystemData(EDDB_SYSTEMS_DATAFILE, DataSource.Data_EDDB, false);
-					EventBus.InitializationCompleted("loading systems from <systems.json>");
-					EventBus.InitializationProgress("(" + GetSystems(DataSource.Data_EDDB).Count + " systems loaded)");
+					EventBus.Completed("loading systems from <systems.json>");
+					EventBus.Progress("(" + GetSystems(DataSource.Data_EDDB).Count + " systems loaded)");
 				}
 
 				// 2. load own local data
-				EventBus.InitializationStart("loading own stations from <stations_own.json>");
+				EventBus.Start("loading own stations from <stations_own.json>");
 				LoadStationData(OWN_STATIONS_DATAFILE, DataSource.Data_Own, true);
-				EventBus.InitializationCompleted("loading stations from <stations_own.json>");
-				EventBus.InitializationProgress("(" + GetStations(DataSource.Data_Own).Count + " stations loaded)");
+				EventBus.Completed("loading stations from <stations_own.json>");
+				EventBus.Progress("(" + GetStations(DataSource.Data_Own).Count + " stations loaded)");
 
-				EventBus.InitializationStart("loading own systems from <systems_own.json>");
+				EventBus.Start("loading own systems from <systems_own.json>");
 				LoadSystemData(OWN_SYSTEMS_DATAFILE, DataSource.Data_Own, true);
-				EventBus.InitializationCompleted("loading own systems from <systems_own.json>)");
-				EventBus.InitializationProgress(GetSystems(DataSource.Data_Own).Count + " systems loaded)");
+				EventBus.Completed("loading own systems from <systems_own.json>)");
+				EventBus.Progress(GetSystems(DataSource.Data_Own).Count + " systems loaded)");
 
-				EventBus.InitializationStart("merging data");
+				EventBus.Start("merging data");
 				if (MergeData())
 				{
 					SaveStationData(OWN_STATIONS_DATAFILE, DataSource.Data_Own, true);
 					SaveSystemData(OWN_SYSTEMS_DATAFILE, DataSource.Data_Own, true);
 				}
-				EventBus.InitializationCompleted("merging data");
-				EventBus.InitializationStart("loading commodity data from <commodities.json>");
+				EventBus.Completed("merging data");
+				EventBus.Start("loading commodity data from <commodities.json>");
 				LoadCommodityData(EDDB_COMMODITIES_DATAFILE, REGULATEDNOISE_COMMODITIES_DATAFILE);
-				EventBus.InitializationCompleted("loading commodity data from <commodities.json>");
+				EventBus.Completed("loading commodity data from <commodities.json>");
 				CalculateAveragePrices();
-				EventBus.InitializationProgress("create milkyway...<OK>");
+				EventBus.Progress("create milkyway...<OK>");
 			}
 			catch (Exception ex)
 			{
@@ -1080,12 +1080,12 @@ namespace RegulatedNoise.EDDB_Data
 
 		private static void DownloadDataFile(Uri address, string filepath, string contentDescription)
 		{
-			EventBus.InitializationProgress("trying to download " + contentDescription + "...");
+			EventBus.Progress("trying to download " + contentDescription + "...");
 			using (var webClient = new WebClient())
 			{
 				webClient.DownloadFile(address, filepath);
 			}
-			EventBus.InitializationProgress("..." + contentDescription + " download completed");
+			EventBus.Progress("..." + contentDescription + " download completed");
 		}
 
 		private class MarketData

@@ -25,6 +25,8 @@ using RegulatedNoise.Core.DomainModel;
 using RegulatedNoise.Core.DomainModel.Trading;
 using RegulatedNoise.Core.EliteInteractions;
 using RegulatedNoise.Core.Messaging;
+using RegulatedNoise.DataProviders;
+using RegulatedNoise.DataProviders.Eddb;
 using RegulatedNoise.EDDB_Data;
 using RegulatedNoise.Enums_and_Utility_Classes;
 using RegulatedNoise.Trading;
@@ -35,10 +37,6 @@ namespace RegulatedNoise
 {
 	public partial class Form1 : RNBaseForm
 	{
-		private SplashScreenForm _Splash;
-
-		public override string thisObjectName { get { return "Form1"; } }
-
 		const string ID_DELIMITER = "empty";
 		const int MAX_NAME_LENGTH = 120;
 
@@ -51,7 +49,6 @@ namespace RegulatedNoise
 		public static Form1 InstanceObject;
 
 		public Random random = new Random();
-		public Guid SessionGuid;
 		public PropertyInfo[] LogEventProperties;
 		public CommandersLog CommandersLog;
 		public static GameSettings GameSettings;
@@ -63,7 +60,6 @@ namespace RegulatedNoise
 		private FileSystemWatcher _fileSystemWatcher;
 		private SingleThreadLogger _logger;
 		private TextInfo _textInfo = new CultureInfo("en-US", false).TextInfo;
-		private Levenshtein _levenshtein = new Levenshtein();
 
 		private string _LoggedSystem = ID_NOT_SET;
 		private string _LoggedLocation = ID_NOT_SET;
@@ -99,7 +95,7 @@ namespace RegulatedNoise
 
 		private GalacticMarket GalacticMarket
 		{
-			get { return ApplicationContext.GalacticMarket; }
+			get { return ApplicationContext.Model.GalacticMarket; }
 		}
 
 		[SecurityPermission(SecurityAction.Demand, ControlAppDomain = true)]
@@ -109,67 +105,79 @@ namespace RegulatedNoise
 			_logger = new SingleThreadLogger(ThreadLoggerType.Form);
 
 			InstanceObject = this;
-
-			_Splash = new SplashScreenForm();
-
+			ISplashScreen splash;
 #if !NO_SPLASH
-			_Splash.Show();
+			splash = new SplashScreenForm();
+#else
+			splash = new DebugSplashScreenForm("Initializing...");
 #endif
+
+			splash.Show();
 			Cursor = Cursors.WaitCursor;
-			EventBus.OnNotificationEvent += InitializationProgressEventHandler;
 			EventBus.OnNotificationEvent += NotificationEventHandler;
 
 			_settings = ApplicationContext.RegulatedNoiseSettings;
-			_commodities = ApplicationContext.Model.Commodities;
 			_marketDataValidator = new MarketDataValidator();
 			try
 			{
+				Task initContext = Task.Factory.StartNew(() =>
+				{
+					var eddb = new EddbDataProvider();
+					eddb.ImportData(ApplicationContext.Model);
+					EventBus.Start("load collected market data");
+					if (File.Exists("AutoSave.csv"))
+					{
+						_logger.Log("  - found autosaved CSV");
+						CsvDataProvider.RetrieveMarketData(new FileInfo("AutoSave.csv"), ApplicationContext.Model);
+						_logger.Log("  - imported CSVs");
+					}
+					EventBus.Completed("load collected market data");
+				}, new CancellationToken(), TaskCreationOptions.None, TaskScheduler.Default);
 				_logger.Log("Initialising...\n");
 				string formName = GetType().Name;
 				if (_settings.WindowBaseData.ContainsKey(formName))
 				{
-					_Splash.SetPosition(_settings.WindowBaseData[formName]);
+					splash.SetPosition(_settings.WindowBaseData[formName]);
 				}
-				_Splash.InfoAdd("initialize components...");
+				splash.InfoAdd("initialize components...");
 				InitializeComponent();
 				_logger.Log("  - component initialized");
-				_Splash.InfoChange("initialize components...<OK>");
+				splash.InfoChange("initialize components...<OK>");
 
-				_Splash.InfoAdd("load game settings...");
+				splash.InfoAdd("load game settings...");
 				GameSettings = new GameSettings(this);
 				_logger.Log("  - loaded game settings");
-				_Splash.InfoChange("load game settings...<OK>");
+				splash.InfoChange("load game settings...<OK>");
 
-				_Splash.InfoAdd("prepare listviews...");
+				splash.InfoAdd("prepare listviews...");
 				SetListViewColumnsAndSorters();
 				_logger.Log("  - set list views");
-				_Splash.InfoChange("prepare listviews...<OK>");
+				splash.InfoChange("prepare listviews...<OK>");
 
-				_Splash.InfoAdd("prepare network interfaces...");
+				splash.InfoAdd("prepare network interfaces...");
 				PopulateNetworkInterfaces();
 				_logger.Log("  - populated network interfaces");
-				_Splash.InfoChange("prepare network interfaces...<OK>");
+				splash.InfoChange("prepare network interfaces...<OK>");
 
-				_Splash.InfoAdd("create OCR object...");
+				splash.InfoAdd("create OCR object...");
 				ocr = new Ocr(this);
 				_logger.Log("  - created OCR object");
-				_Splash.InfoChange("create OCR object...<OK>");
+				splash.InfoChange("create OCR object...<OK>");
 
 				Application.ApplicationExit += Application_ApplicationExit;
 				_logger.Log("  - set application exit handler");
 
-				_Splash.InfoAdd("create ocr calibrator...");
+				splash.InfoAdd("create ocr calibrator...");
 				OcrCalibrator = new OcrCalibrator();
 				OcrCalibrator.LoadCalibration();
-				var OcrCalibratorTabPage = new TabPage("OCR Calibration");
-				OcrCalibratorTabPage.Name = "OCR_Calibration";
+				var OcrCalibratorTabPage = new TabPage("OCR Calibration") {Name = "OCR_Calibration"};
 				var oct = new OcrCalibratorTab { Dock = DockStyle.Fill };
 				OcrCalibratorTabPage.Controls.Add(oct);
 				tabCtrlOCR.Controls.Add(OcrCalibratorTabPage);
 				_logger.Log("  - initialised Ocr Calibrator");
-				_Splash.InfoChange("create ocr calibrator...<OK>");
+				splash.InfoChange("create ocr calibrator...<OK>");
 
-				_Splash.InfoAdd("prepare 'Commander's Log'...");
+				splash.InfoAdd("prepare 'Commander's Log'...");
 				CommandersLog = new CommandersLog(this);
 				dtpLogEventDate.CustomFormat = CultureInfo.CurrentUICulture.DateTimeFormat.ShortDatePattern +
 														 " " +
@@ -181,29 +189,15 @@ namespace RegulatedNoise
 				_logger.Log("  - loaded Commander's Log");
 				CommandersLog.UpdateCommandersLogListView();
 				_logger.Log("  - updated Commander's Log List View");
-				_Splash.InfoChange("prepare 'Commander's Log'...<OK>");
+				splash.InfoChange("prepare 'Commander's Log'...<OK>");
 
-
-				_Splash.InfoAdd("load collected market data...");
-				if (File.Exists("AutoSave.csv"))
-				{
-					_logger.Log("  - found autosaved CSV");
-					var s = new string[1];
-					s[0] = "AutoSave.csv";
-					ImportListOfCsvs(s);
-					_logger.Log("  - imported CSVs");
-					SetupGui();
-					_logger.Log("  - Updated UI");
-				}
-				_Splash.InfoChange("load collected market data...<OK>");
-
-				_Splash.InfoAdd("load station history...");
+				splash.InfoAdd("load station history...");
 				_StationHistory.loadHistory(@".\Data\StationHistory.json", true);
-				_Splash.InfoChange("load station history...<OK>");
+				splash.InfoChange("load station history...<OK>");
 
-				_Splash.InfoAdd("apply settings...");
+				splash.InfoAdd("apply settings...");
 				ApplySettings();
-				_Splash.InfoChange("apply settings...<OK>");
+				splash.InfoChange("apply settings...<OK>");
 
 				_logger.Log("  - applied settings");
 
@@ -235,7 +229,7 @@ namespace RegulatedNoise
 				//edl.Initialize();
 				//edl.StartWatcher();
 
-				_Splash.InfoAdd("load and prepare international commodity names...");
+				splash.InfoAdd("load and prepare international commodity names...");
 
 				// depending of the language this will be removed
 				//_EDDNTabPageIndex = tabCtrlMain.TabPages.IndexOfKey("tabEDDN");
@@ -246,28 +240,38 @@ namespace RegulatedNoise
 				// load commodities in the correct language
 				LoadCommodities(_settings.Language);
 				LoadCommodityLevels(_settings.Language);
-				_Splash.InfoChange("load and prepare international commodity names...<OK>");
+				splash.InfoChange("load and prepare international commodity names...<OK>");
 
 				setOCRCalibrationTabVisibility();
 
-				_Splash.InfoAdd("load tool tips...");
+				splash.InfoAdd("load tool tips...");
 				loadToolTips();
-				_Splash.InfoChange("load tool tips...<OK>");
+				splash.InfoChange("load tool tips...<OK>");
 
-				_Splash.InfoAdd("prepare system/location view...");
+				splash.InfoAdd("prepare system/location view...");
 				prePrepareSystemAndStationFields();
-				_Splash.InfoChange("prepare system/location view...<OK>");
+				splash.InfoChange("prepare system/location view...<OK>");
 
-				_Splash.InfoAdd("prepare GUI elements...");
-				SetupGui(true);
-				_Splash.InfoChange("prepare GUI elements...<OK>");
+				initContext.ContinueWith(
+					task =>
+					{
+						splash.InfoAdd("prepare GUI elements...");
+						SetupGui(true);
+						splash.InfoChange("prepare GUI elements...<OK>");
 
-				_Splash.InfoAdd("starting logfile watcher...");
-				ApplicationContext.EliteLogFilesScanner.OnCurrentLocationUpdate += UpdateLocationInfo;
-				ApplicationContext.EliteLogFilesScanner.UpdateSystemNameFromLogFile();
-				_logger.Log("  - fetched system name from file");
-				_Splash.InfoChange("starting logfile watcher...<OK>");
-				UpdateEddnState();
+						splash.InfoAdd("starting logfile watcher...");
+						_logger.Log("  - fetched system name from file");
+						splash.InfoChange("starting logfile watcher...<OK>");
+						UpdateEddnState();
+						ApplicationContext.EliteLogFilesScanner.OnCurrentLocationUpdate += UpdateLocationInfo;
+						ApplicationContext.EliteLogFilesScanner.UpdateSystemNameFromLogFile();
+						_InitDone = true;
+						splash.Close(TimeSpan.FromSeconds(10));
+						LoadSystemData(tbCurrentSystemFromLogs.Text);
+						LoadStationData(tbCurrentSystemFromLogs.Text, tbCurrentStationinfoFromLogs.Text);
+						showSystemNumbers();
+					}, new CancellationToken(), TaskContinuationOptions.None, TaskScheduler.FromCurrentSynchronizationContext());
+
 #if(DEBUG)
 				var testTab = new TabPage("Testing");
 				var tester = new TestTab.TestTab();
@@ -283,10 +287,8 @@ namespace RegulatedNoise
 			finally
 			{
 				Cursor = Cursors.Default;
-				EventBus.OnNotificationEvent -= InitializationProgressEventHandler;
 			}
-			_Splash.InfoAdd("\nstart sequence finished !!!");
-			_InitDone = true;
+			splash.InfoAdd("\nstart sequence finished !!!");
 		}
 
 		protected override void OnLoad(EventArgs e)
@@ -317,9 +319,9 @@ namespace RegulatedNoise
 			{
 				switch (notificationEventArgs.Event)
 				{
-					case NotificationEventArgs.EventType.InitializationStart:
-					case NotificationEventArgs.EventType.InitializationProgress:
-					case NotificationEventArgs.EventType.InitializationCompleted:
+					case NotificationEventArgs.EventType.Start:
+					case NotificationEventArgs.EventType.Progress:
+					case NotificationEventArgs.EventType.Completed:
 						break;
 					case NotificationEventArgs.EventType.Information:
 						notificationEventArgs.Cancel = MsgBox.Show(notificationEventArgs.Message,
@@ -359,21 +361,6 @@ namespace RegulatedNoise
 			});
 		}
 
-		private void InitializationProgressEventHandler(object sender, NotificationEventArgs notificationEventArgs)
-		{
-			this.RunInGuiThread(() =>
-			{
-				switch (notificationEventArgs.Event)
-				{
-					case NotificationEventArgs.EventType.InitializationCompleted:
-						_Splash.InfoChange(notificationEventArgs.Message);
-						break;
-					case NotificationEventArgs.EventType.InitializationProgress:
-						_Splash.InfoAdd(notificationEventArgs.Message);
-						break;
-				}
-			});
-		}
 
 		private void loadToolTips()
 		{
@@ -912,36 +899,30 @@ namespace RegulatedNoise
 
 			if (openFile.FileNames.Length > 0)
 			{
-				var filenames = openFile.FileNames;
-
-				ImportListOfCsvs(filenames);
+				ImportCsvAsync(openFile.FileNames);
 			}
-
-			SetupGui();
-
 		}
 
-		private void ImportListOfCsvs(string[] filenames)
+		private Task ImportCsvAsync(IEnumerable<string> fileNames)
 		{
-			foreach (string filename in filenames)
+			return Task.Factory.StartNew(() =>
 			{
-				var reader = new StreamReader(File.OpenRead(filename));
-
-				string header = reader.ReadLine();
-
-				if (header != null && !header.StartsWith("System;"))
+				foreach (string fileName in fileNames)
 				{
-					MsgBox.Show("Error: " + filename + " is unreadable or in an old format.  Skipping...");
-					continue;
+					try
+					{
+						CsvDataProvider.RetrieveMarketData(new FileInfo(fileName), ApplicationContext.Model);
+					}
+					catch (Exception ex)
+					{
+						Trace.TraceError("failed to parse " + fileName + ": " + ex);
+					}
 				}
-
-				while (!reader.EndOfStream)
-				{
-					var line = reader.ReadLine();
-					ImportCsvString(line);
-				}
-				reader.Close();
-			}
+			},
+				new CancellationToken(),
+				TaskCreationOptions.None,
+				TaskScheduler.Default)
+				.ContinueWith(task => SetupGui(), TaskScheduler.FromCurrentSynchronizationContext());
 		}
 
 		private void ImportCsvString(string csvRow, bool postToEddn = false, bool updateStationVisitations = false)
@@ -960,7 +941,7 @@ namespace RegulatedNoise
 
 				if (GalacticMarket.Update(marketData) != Market.UpdateState.Discarded)
 				{
-					if (postToEddn && cbPostOnImport.Checked && ApplicationContext.Model.StarMap.GetSystem(marketData.SystemName) != null)
+					if (postToEddn && cbPostOnImport.Checked && GetSystem(marketData.SystemName) != null)
 					{
 						ApplicationContext.Eddn.SendToEddn(marketData);
 					}
@@ -2858,7 +2839,7 @@ namespace RegulatedNoise
 			if (commodity.ToUpper() == "Implausible Results!".ToUpper())
 			{
 				// check results
-				var f = new EditOcrResults(tbFinalOcrOutput.Text, _marketDataValidator, _commodities);
+				var f = new EditOcrResults(tbFinalOcrOutput.Text, _marketDataValidator, ApplicationContext.Model.Commodities);
 				f.onlyImplausible = true;
 				var q = f.ShowDialog();
 
@@ -3356,51 +3337,33 @@ namespace RegulatedNoise
 
 		private void button19_Click(object sender, EventArgs e)
 		{
-			FolderBrowserDialog openFile = new FolderBrowserDialog();
-			openFile.SelectedPath = Environment.GetFolderPath((Environment.SpecialFolder.MyDocuments));
-			openFile.ShowDialog();
-
-
-			_filesFound = new List<string>();
-
-			if (openFile.SelectedPath != "")
+			FolderBrowserDialog folderBrowser = new FolderBrowserDialog
 			{
-				_filesFound = new List<string>();
-
-				DirSearch(openFile.SelectedPath);
-
-				ImportListOfCsvs(_filesFound.ToArray());
-
+				SelectedPath = Environment.GetFolderPath((Environment.SpecialFolder.MyDocuments))
+			};
+			folderBrowser.ShowDialog();
+			if (folderBrowser.SelectedPath != "")
+			{
+				var csvFiles = new List<string>();
+				DirSearch(folderBrowser.SelectedPath, csvFiles);
+				ImportCsvAsync(csvFiles);
 			}
-
 			SetupGui();
 		}
 
-		private List<string> _filesFound;
-
-		private void DirSearch(string sDir)
+		private void DirSearch(string sDir, List<string> csvFiles)
 		{
-
 			try
 			{
 				foreach (string d in Directory.GetDirectories(sDir))
 				{
-					foreach (string f in Directory.GetFiles(d, "*.csv"))
-					{
-						_filesFound.Add(f);
-					}
-					DirSearch(d);
+					csvFiles.AddRange(Directory.GetFiles(d, "*.csv"));
+					DirSearch(d, csvFiles);
 				}
 			}
 			catch (Exception ex)
 			{
-				_logger.Log("Error recursing directories:", true);
-				_logger.Log(ex.ToString(), true);
-				_logger.Log(ex.Message, true);
-				_logger.Log(ex.StackTrace, true);
-				if (ex.InnerException != null)
-					_logger.Log(ex.InnerException.ToString(), true);
-				Console.WriteLine(ex.Message);
+				_logger.Log("Error recursing directories: " + ex, true);
 			}
 		}
 
@@ -3730,36 +3693,19 @@ namespace RegulatedNoise
 		#region Christmas!
 		Timer _timer;
 
-		private void Form_Shown(object sender, EventArgs e)
-		{
-			_Splash.CloseDelayed();
-
-			LoadSystemData(tbCurrentSystemFromLogs.Text);
-			LoadStationData(tbCurrentSystemFromLogs.Text, tbCurrentStationinfoFromLogs.Text);
-
-			showSystemNumbers();
-
-			SetupGui();
-
-		}
-
 		private void Form_Load(object sender, EventArgs e)
 		{
 
 			Text += _settings.Version.ToString(CultureInfo.InvariantCulture);
-
 #if DukeJones
 			_settings.CheckVersion2();
 			Text += "_" + _settings.VersionDJ.ToString(CultureInfo.InvariantCulture);
 #endif
-
-
 			if (((DateTime.Now.Day == 24 || DateTime.Now.Day == 25 || DateTime.Now.Day == 26) &&
 					DateTime.Now.Month == 12) || (DateTime.Now.Day == 31 && DateTime.Now.Month == 12) ||
 				  (DateTime.Now.Day == 1 && DateTime.Now.Month == 1))
 			{
-				_timer = new Timer();
-				_timer.Interval = 75;
+				_timer = new Timer {Interval = 75};
 				_timer.Tick += OnTick;
 				_timer.Start();
 			}
@@ -3771,16 +3717,11 @@ namespace RegulatedNoise
 			tabControl2.SelectedTab = tabStationToStation;
 			tabControl2.SelectedTab = tabPage3;
 			tabCtrlMain.SelectedTab = tabHelpAndChangeLog;
-
 			Retheme();
-
-			Clock = new Timer();
-			Clock.Interval = 1000;
+			Clock = new Timer {Interval = 1000};
 			Clock.Start();
 			Clock.Tick += Clock_Tick;
-
 			cmdTest.Visible = Debugger.IsAttached;
-
 		}
 
 		private void Clock_Tick(object sender, EventArgs e)
@@ -3865,7 +3806,6 @@ namespace RegulatedNoise
 
 		int animPhase;
 		int phaseCtr;
-		private readonly Commodities _commodities;
 		private readonly IValidator<MarketDataRow> _marketDataValidator;
 
 		private void OnTick(object sender, EventArgs args)
@@ -4091,7 +4031,7 @@ namespace RegulatedNoise
 
 		private void bEditResults_Click(object sender, EventArgs e)
 		{
-			var f = new EditOcrResults(tbFinalOcrOutput.Text, _marketDataValidator, _commodities);
+			var f = new EditOcrResults(tbFinalOcrOutput.Text, _marketDataValidator, ApplicationContext.Model.Commodities);
 			var q = f.ShowDialog();
 
 			if (q == DialogResult.OK)
@@ -4653,12 +4593,8 @@ namespace RegulatedNoise
 
 		private void cmdWarnLevels_Click(object sender, EventArgs e)
 		{
-			string Commodity = String.Empty;
-
-			CommodityListView CView = new CommodityListView(_commodities);
-
+			CommodityListView CView = new CommodityListView(ApplicationContext.Model.Commodities);
 			CView.ShowDialog(this);
-
 		}
 
 		private void cbActivateOCRTab_CheckedChanged(object sender, EventArgs e)
@@ -5183,7 +5119,7 @@ namespace RegulatedNoise
 
 			txtSystemPopulation.Culture = CultureInfo.CurrentCulture;
 
-			this.txtSystemName.TextChanged += new EventHandler(this.txtSystem_TextChanged);
+			this.txtSystemName.TextChanged += this.txtSystem_TextChanged;
 			this.txtSystemX.TextChanged += new EventHandler(this.txtSystem_TextChanged);
 			this.txtSystemY.TextChanged += new EventHandler(this.txtSystem_TextChanged);
 			this.txtSystemZ.TextChanged += new EventHandler(this.txtSystem_TextChanged);
@@ -5554,12 +5490,21 @@ namespace RegulatedNoise
 
 		private Station GetStation(string systemName, string stationName)
 		{
-			return GetSystem(systemName).Stations.FirstOrDefault(x => x.Name.Equals(stationName, StringComparison.InvariantCultureIgnoreCase));
+			var starSystem = GetSystem(systemName);
+			if (starSystem != null)
+			{
+				return
+					starSystem.Stations.FirstOrDefault(x => x.Name.Equals(stationName, StringComparison.InvariantCultureIgnoreCase));
+			}
+			else
+			{
+				return null;
+			}
 		}
 
 		private static StarSystem GetSystem(string systemName)
 		{
-			return ApplicationContext.Model.StarMap.GetSystem(systemName);
+			return ApplicationContext.Model.StarMap.TryGetSystem(systemName);
 		}
 
 		private void CheckBox_StationSystem_CheckedChanged(object sender, EventArgs e)
@@ -6257,5 +6202,88 @@ namespace RegulatedNoise
 				cmbStationToStationTo.SelectedIndex = listIndex;
 			}
 		}
+	}
+
+	public class DebugSplashScreenForm : ISplashScreen
+	{
+		private readonly ProgressView _progressView;
+		private readonly TaskFactory _taskFactory;
+
+		public DebugSplashScreenForm(string title)
+		{
+			_progressView = new ProgressView() { Text = title };
+			_taskFactory = new TaskFactory(TaskScheduler.FromCurrentSynchronizationContext());
+		}
+
+		public void Show()
+		{
+			EventBus.OnNotificationEvent += NotificationEventHandler;
+			_progressView.ProgressStart();
+		}
+
+		private void NotificationEventHandler(object sender, NotificationEventArgs notificationEventArgs)
+		{
+			if (notificationEventArgs == null) return;
+			_taskFactory.StartNew(() =>
+			{
+				switch (notificationEventArgs.Event)
+				{
+					case NotificationEventArgs.EventType.Start:
+					case NotificationEventArgs.EventType.Progress:
+						_progressView.Text = notificationEventArgs.Title;
+						if (notificationEventArgs.Message != null)
+						{
+							_progressView.ProgressInfo(notificationEventArgs.Message);
+						}
+						_progressView.ProgressUpdate(notificationEventArgs.ActualProgress, notificationEventArgs.TotalProgress);
+						break;
+					case NotificationEventArgs.EventType.Completed:
+						_progressView.Text = notificationEventArgs.Title;
+						if (notificationEventArgs.Message != null)
+						{
+							_progressView.ProgressInfo(notificationEventArgs.Message);
+						}
+						_progressView.ProgressUpdate(100,100);
+						break;
+					case NotificationEventArgs.EventType.Information:
+						break;
+					case NotificationEventArgs.EventType.Request:
+						break;
+					case NotificationEventArgs.EventType.FileRequest:
+						break;
+					case NotificationEventArgs.EventType.Alert:
+						break;
+					default:
+						break;
+				}
+			});
+		}
+
+		public void SetPosition(WindowData windowData)
+		{
+		}
+
+		public void InfoAdd(string info)
+		{
+		}
+
+		public void InfoChange(string infoUpdate)
+		{
+		}
+
+		public void Close(TimeSpan delay)
+		{
+			EventBus.OnNotificationEvent -= NotificationEventHandler;
+			_progressView.Close();
+		}
+	}
+
+	internal interface ISplashScreen
+	{
+		void Show();
+		void SetPosition(WindowData windowData);
+		void InfoAdd(string info);
+		void InfoChange(string infoUpdate);
+		void Close(TimeSpan delay);
 	}
 }

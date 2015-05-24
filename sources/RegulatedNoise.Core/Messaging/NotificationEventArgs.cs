@@ -6,9 +6,9 @@ namespace RegulatedNoise.Core.Messaging
 	{
 		public enum EventType
 		{
-			InitializationStart,
-			InitializationProgress,
-			InitializationCompleted,
+			Start,
+			Progress,
+			Completed,
 			Information,
 			Request,
 			FileRequest,
@@ -18,6 +18,12 @@ namespace RegulatedNoise.Core.Messaging
 		public readonly EventType Event;
 
 		public readonly string Message;
+
+		public int CorrelationId { get; set; }
+
+		public int ActualProgress { get; set; }
+
+		public int TotalProgress { get; set; }
 
 		public string Title { get; set; }
 

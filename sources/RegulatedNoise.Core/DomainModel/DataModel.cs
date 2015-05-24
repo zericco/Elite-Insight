@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using RegulatedNoise.Core.Messaging;
 
 namespace RegulatedNoise.Core.DomainModel
 {
@@ -9,32 +10,28 @@ namespace RegulatedNoise.Core.DomainModel
 
 		public event EventHandler<MarketDataEventArgs> OnMarketDataUpdate
 		{
-			add { _galacticMarket.OnMarketDataUpdate += value; }
-			remove { _galacticMarket.OnMarketDataUpdate -= value; }
+			add { GalacticMarket.OnMarketDataUpdate += value; }
+			remove { GalacticMarket.OnMarketDataUpdate -= value; }
 		}
 
 		private readonly ILocalizer _localizer;
 		private readonly IValidator<MarketDataRow> _marketDataValidator;
 
-		private Commodities _commodities;
+		private Lazy<Commodities> _commodities;
 		public Commodities Commodities
 		{
 			get
 			{
-				if (_commodities == null)
-					_commodities = new Commodities(_localizer);
-				return _commodities;
+				return _commodities.Value;
 			}
 		}
 
-		private GalacticMarket _galacticMarket;
+		private readonly Lazy<GalacticMarket> _galacticMarket = new Lazy<GalacticMarket>();
 		public GalacticMarket GalacticMarket
 		{
 			get
 			{
-				if (_galacticMarket == null)
-					_galacticMarket = new GalacticMarket();
-				return _galacticMarket;
+				return _galacticMarket.Value;
 			}
 		}
 
@@ -50,13 +47,23 @@ namespace RegulatedNoise.Core.DomainModel
 		}
 
 		public DataModel(ILocalizer localizer, IValidator<MarketDataRow> marketDataValidator)
+			:this(localizer, marketDataValidator, NopProgress.Instance)
+		{
+		}
+
+		public DataModel(ILocalizer localizer, IValidator<MarketDataRow> marketDataValidator, IProgress<ProgressEvent> onInitializationProgress)
 		{
 			if (marketDataValidator == null)
 			{
 				throw new ArgumentNullException("marketDataValidator");
 			}
+			if (onInitializationProgress == null)
+			{
+				throw new ArgumentNullException("onInitializationProgress");
+			}
 			_localizer = localizer;
-			_marketDataValidator = marketDataValidator;
+			_marketDataValidator = marketDataValidator;			
+			_commodities = new Lazy<Commodities>(() => new Commodities(_localizer));
 		}
 
 		public void UpdateMarket(MarketDataRow marketdata)

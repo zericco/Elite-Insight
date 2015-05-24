@@ -11,6 +11,7 @@
 using System.Diagnostics;
 using RegulatedNoise.Core.DomainModel;
 using RegulatedNoise.DataProviders;
+using RegulatedNoise.DataProviders.Eddb;
 using RegulatedNoise.EDDB_Data;
 
 namespace RegulatedNoise

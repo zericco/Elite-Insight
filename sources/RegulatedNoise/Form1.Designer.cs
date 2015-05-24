@@ -4644,7 +4644,6 @@ namespace RegulatedNoise
 			this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Show;
 			this.Text = "RegulatedNoise v";
 			this.Load += new System.EventHandler(this.Form_Load);
-			this.Shown += new System.EventHandler(this.Form_Shown);
 			((System.ComponentModel.ISupportInitialize)(this.nudPurgeOldDataDays)).EndInit();
 			this.contextMenuStrip1.ResumeLayout(false);
 			this.tabCtrlMain.ResumeLayout(false);

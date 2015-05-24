@@ -12,8 +12,6 @@ namespace RegulatedNoise
 {
 	public partial class EditOcrResults : RNBaseForm
 	{
-		public override string thisObjectName { get { return "EditOcrResults"; } }
-
 		public string ReturnValue;
 		private int lastRow;
 		private int currentRow;

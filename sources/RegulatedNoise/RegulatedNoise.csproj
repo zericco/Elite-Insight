@@ -93,7 +93,6 @@
     <Compile Include="EDDB_Data\CommodityView.Designer.cs">
       <DependentUpon>CommodityView.cs</DependentUpon>
     </Compile>
-    <Compile Include="EDDB_Data\EddbDataProvider.cs" />
     <Compile Include="EDDB_Data\EddnMessage.cs" />
     <Compile Include="EDDB_Data\EDStations.cs" />
     <Compile Include="EDDB_Data\EDStationView.cs">
@@ -103,7 +102,6 @@
       <DependentUpon>EDStationView.cs</DependentUpon>
     </Compile>
     <Compile Include="EDDB_Data\EDSystems.cs" />
-    <Compile Include="EDDB_Data\EDMilkyway.cs" />
     <Compile Include="EDDB_Data\EDMarketData.cs" />
     <Compile Include="EDDN.cs" />
     <Compile Include="EddnMessageEventArgs.cs" />
@@ -122,7 +120,6 @@
       <DependentUpon>dsCommodities.xsd</DependentUpon>
     </Compile>
     <Compile Include="Elite Dangerous Specifics\EdLogLine.cs" />
-    <Compile Include="Elite Dangerous Specifics\EdLogWatcher.cs" />
     <Compile Include="Enums and Utility Classes\InputBox.cs" />
     <Compile Include="Enums and Utility Classes\ObjectCompare.cs" />
     <Compile Include="Enums and Utility Classes\PerformanceTimer.cs" />
@@ -134,6 +131,7 @@
     </Compile>
     <Compile Include="Enums and Utility Classes\RNGraphics.cs" />
     <Compile Include="Enums and Utility Classes\SerializableDictionary.cs" />
+    <Compile Include="Enums and Utility Classes\SingleThreadLogger.cs" />
     <Compile Include="Enums and Utility Classes\StationHistory.cs" />
     <Compile Include="Enums and Utility Classes\UnixTimeStamp.cs" />
     <Compile Include="Exceptions\InitializationException.cs" />
@@ -173,7 +171,6 @@
     <Compile Include="Enums and Utility Classes\RegulatedNoiseSettings.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Enums and Utility Classes\SingleThreadLogger.cs" />
     <Compile Include="Form1.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -771,9 +768,7 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="EliteInteractions\" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <ProjectReference Include="$(SolutionDir)sources\EdClasses\EdClasses.csproj">
       <Project>{236a934b-5543-4751-baa2-018dfa825271}</Project>

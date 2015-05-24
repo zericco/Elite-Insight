@@ -64,6 +64,7 @@
     <Compile Include="EddnMessageTest.cs" />
     <Compile Include="EliteInteractions\LogFilesScannerTest.cs" />
     <Compile Include="MarketDataRowTest.cs" />
+    <Compile Include="MarketPOC.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TestHelpers.cs" />
   </ItemGroup>

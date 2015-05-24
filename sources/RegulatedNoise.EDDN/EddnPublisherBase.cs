@@ -25,7 +25,7 @@ namespace RegulatedNoise.EDDN
 		{
 			PostUrl = postUrl;
 			_pendingMessage = new BlockingCollection<string>();
-			EventBus.InitializationStart("initializing Eddn publisher");
+			EventBus.Start("initializing Eddn publisher");
 		}
 
 		public bool UseTestSchema { get; set; }

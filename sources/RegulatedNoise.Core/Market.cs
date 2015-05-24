@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
-using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using RegulatedNoise.Annotations;
 using RegulatedNoise.Core.DomainModel;
 
@@ -22,6 +21,8 @@ namespace RegulatedNoise.Core
 			internal set { Dictionary[marketdataId] = value; }
 		}
 
+		public bool EnableNotification { get; set; }
+
 		protected Market()
 		{
 			Dictionary = new SortedDictionary<string, MarketDataRow>();
@@ -35,7 +36,8 @@ namespace RegulatedNoise.Core
 		}
 
 		private readonly object _updating = new object();
-		public virtual event EventHandler<MarketDataEventArgs> OnMarketDataUpdate;
+		
+		public event EventHandler<MarketDataEventArgs> OnMarketDataUpdate;
 
 		public UpdateState Update([NotNull] MarketDataRow marketData)
 		{
@@ -100,19 +102,9 @@ namespace RegulatedNoise.Core
 			Dictionary.Clear();
 		}
 
-		public bool Contains(string marketDataId)
-		{
-			return Dictionary.ContainsKey(marketDataId);
-		}
-
 		public bool Contains(MarketDataRow marketData)
 		{
 			return Dictionary.ContainsKey(GetKeyForItem(marketData));
-		}
-
-		public void CopyTo(MarketDataRow[] array, int arrayIndex)
-		{
-			Dictionary.Values.CopyTo(array, arrayIndex);
 		}
 
 		protected abstract string GetKeyForItem(MarketDataRow marketDataRow);
@@ -144,28 +136,22 @@ namespace RegulatedNoise.Core
 			}
 		}
 
-		protected void RaiseMarketDataReplace(MarketDataRow existing, MarketDataRow update)
+		protected void RaiseMarketDataUpdate(MarketDataEventArgs e)
 		{
-			RaiseMarketDataUpdate(new MarketDataEventArgs(previous: existing, actual: update));
-		}
-
-		protected void RaiseNewMarketData(MarketDataRow newlyAdded)
-		{
-			RaiseMarketDataUpdate(new MarketDataEventArgs(actual: newlyAdded));
-		}
-
-		protected virtual void RaiseMarketDataUpdate(MarketDataEventArgs e)
-		{
+			if (!EnableNotification) return;
 			var handler = OnMarketDataUpdate;
 			if (handler != null)
-				try
-				{
-					handler(this, e);
-				}
-				catch (Exception ex)
-				{
-					Trace.TraceWarning("marketdata update notification failure " + ex);
-				}
+					Task.Run(() =>
+					{
+						try
+						{
+							handler(this, e);
+						}
+						catch (Exception ex)
+						{
+							Trace.TraceWarning("marketdata update notification failure " + ex);
+						}
+					});
 		}
 
 		public IEnumerator<MarketDataRow> GetEnumerator()

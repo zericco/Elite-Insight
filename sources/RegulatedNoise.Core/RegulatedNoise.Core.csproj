@@ -52,6 +52,7 @@
     <Compile Include="Helpers\UnixTimeStamp.cs" />
     <Compile Include="Messaging\EventBus.cs" />
     <Compile Include="Messaging\NotificationEventArgs.cs" />
+    <Compile Include="Messaging\ProgressEvent.cs" />
     <Compile Include="Properties\Annotations.cs" />
     <Compile Include="DomainModel\Commodities.cs" />
     <Compile Include="DomainModel\Commodity.cs" />
@@ -73,9 +74,7 @@
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="DataProviders\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

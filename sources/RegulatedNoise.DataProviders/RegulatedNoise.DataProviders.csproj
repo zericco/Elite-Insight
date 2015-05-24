@@ -44,6 +44,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CsvDataProvider.cs" />
     <Compile Include="Eddb\EddbCommodity.cs" />
     <Compile Include="Eddb\EddbDataProvider.cs" />
     <Compile Include="Eddb\EddbStation.cs" />

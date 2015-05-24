@@ -1,57 +1,76 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Threading;
 
 namespace RegulatedNoise.Core.Messaging
 {
 	public static class EventBus
 	{
+		private static int _nextId;
+
+		public static int GetNextEventId()
+		{
+			return Interlocked.Increment(ref _nextId);
+		}
+
 		public static event EventHandler<NotificationEventArgs> OnNotificationEvent;
 
-		public static void InitializationStart(string message)
+		public static int Start(string message, int total = 0)
 		{
-			RaiseInitializationEvent(message + "...", NotificationEventArgs.EventType.InitializationStart);
+			int nextEventId = GetNextEventId();
+			RaiseNotificationEvent(new NotificationEventArgs(message, NotificationEventArgs.EventType.Start)
+			{
+				TotalProgress = total
+				,CorrelationId = nextEventId
+			});
+			return nextEventId;
 		}
 
-		public static void InitializationProgress(string message)
+		public static int Progress(string message, int actual, int total, int correlationId = -1)
 		{
-			RaiseInitializationEvent(message, NotificationEventArgs.EventType.InitializationProgress);
+			RaiseNotificationEvent(new NotificationEventArgs(message, NotificationEventArgs.EventType.Progress)
+			{
+				ActualProgress = actual
+				,TotalProgress = total
+				,CorrelationId = correlationId
+			});
+			return correlationId;
 		}
 
-		public static void InitializationCompleted(string message)
+		public static int Completed(string message, int correlationId = -1)
 		{
-			RaiseInitializationEvent("..." + message + "...<OK>", NotificationEventArgs.EventType.InitializationCompleted);
+			RaiseNotificationEvent(new NotificationEventArgs(message, NotificationEventArgs.EventType.Completed)
+			{
+				CorrelationId = correlationId
+			});
+			return correlationId;
 		}
 
 		public static void Information(string message, string title = null)
 		{
-			RaiseInitializationEvent(new NotificationEventArgs(message, NotificationEventArgs.EventType.Information) { Title = title });
+			RaiseNotificationEvent(new NotificationEventArgs(message, NotificationEventArgs.EventType.Information) { Title = title });
 		}
 
         public static void Alert(string message, string title = null)
         {
-            RaiseInitializationEvent(new NotificationEventArgs(message, NotificationEventArgs.EventType.Alert) { Title = title });
+            RaiseNotificationEvent(new NotificationEventArgs(message, NotificationEventArgs.EventType.Alert) { Title = title });
         }
 
 		public static bool Request(string message, string title = null)
 		{
-			return !RaiseInitializationEvent(new NotificationEventArgs(message, NotificationEventArgs.EventType.Request) { Title = title }).Cancel;
+			return !RaiseNotificationEvent(new NotificationEventArgs(message, NotificationEventArgs.EventType.Request) { Title = title }).Cancel;
 		}
 
 		public static string FileRequest(string message, string title = null)
 		{
 			return
-				RaiseInitializationEvent(new NotificationEventArgs(message, NotificationEventArgs.EventType.FileRequest)
+				RaiseNotificationEvent(new NotificationEventArgs(message, NotificationEventArgs.EventType.FileRequest)
 				{
 					Title = title
 				}).Response;
 		}
 
-		private static NotificationEventArgs RaiseInitializationEvent(string message, NotificationEventArgs.EventType eventType)
-		{
-			return RaiseInitializationEvent(new NotificationEventArgs(message, eventType));
-		}
-
-		private static NotificationEventArgs RaiseInitializationEvent(NotificationEventArgs notificationEventArgs)
+		private static NotificationEventArgs RaiseNotificationEvent(NotificationEventArgs notificationEventArgs)
 		{
 			var handler = OnNotificationEvent;
 			if (handler != null)

@@ -26,7 +26,7 @@ namespace RegulatedNoise.EDDN
 			{
 				throw new ArgumentNullException("eddnListenUrl");
 			}
-			EventBus.InitializationStart("initializing Eddn listener");
+			EventBus.Start("initializing Eddn listener");
 			EddnListenUrl = eddnListenUrl;
 		}
 

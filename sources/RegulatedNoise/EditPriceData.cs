@@ -3,15 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Forms;
 using RegulatedNoise.Core.DomainModel;
-using RegulatedNoise.EDDB_Data;
 using RegulatedNoise.Enums_and_Utility_Classes;
 
 namespace RegulatedNoise
 {
     public partial class EditPriceData : RNBaseForm
     {
-        public override string thisObjectName { get { return "EditPriceData"; } }
-
         public MarketDataRow RowToEdit;
 
         public EditPriceData(MarketDataRow marketDataRow, IEnumerable<string> commodities)

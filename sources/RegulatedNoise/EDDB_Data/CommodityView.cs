@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Windows.Forms;
-using RegulatedNoise.Core;
 using RegulatedNoise.Core.DomainModel;
 using RegulatedNoise.Enums_and_Utility_Classes;
 
@@ -12,7 +11,6 @@ namespace RegulatedNoise.EDDB_Data
 	public partial class CommodityView : RNBaseForm
 	{
 		private readonly Commodities _commodities;
-		public override string thisObjectName { get { return "CommodityView"; } }
 
 		private Boolean m_DataChanged = false;
 		private string m_OldValue;

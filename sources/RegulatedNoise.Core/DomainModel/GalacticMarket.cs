@@ -5,6 +5,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
 using RegulatedNoise.Annotations;
+using RegulatedNoise.Core.Helpers;
 
 namespace RegulatedNoise.Core.DomainModel
 {
@@ -79,7 +80,7 @@ namespace RegulatedNoise.Core.DomainModel
 		{
 			_byStation = new StationMarketCollection();
 			_byCommodity = new CommodityMarketCollection();
-			_allMarketDatas = new MarketDataCollection();
+			_allMarketDatas = new MarketDataCollection() { EnableNotification = true };
 		}
 
 		public IEnumerable<MarketDataRow> StationMarket(string stationId)
@@ -189,6 +190,11 @@ namespace RegulatedNoise.Core.DomainModel
 			return GetEnumerator();
 		}
 
+		public IEnumerable<MarketDataRow> FindMarketData(string text)
+		{
+			return this.LevenFilter(text, md => md.MarketDataId);
+		}
+
 		protected class MarketDataCollection : Market
 		{
 			protected override string GetKeyForItem(MarketDataRow item)
@@ -277,6 +283,11 @@ namespace RegulatedNoise.Core.DomainModel
 			{
 				return new StationMarket(marketDataRow.StationID, marketDataRow.SystemName, marketDataRow.StationName);
 			}
+
+			public override string ToString()
+			{
+				return "StationMarkets [" + Count + "]";
+			}
 		}
 
 		protected class CommodityMarketCollection : MarketCollection<CommodityMarket>
@@ -295,11 +306,11 @@ namespace RegulatedNoise.Core.DomainModel
 			{
 				return new CommodityMarket(marketDataRow.CommodityName);
 			}
-		}
 
-		public MarketDataRow FindMarketData(string text)
-		{
-			throw new NotImplementedException();
+			public override string ToString()
+			{
+				return "CommodityMarkets [" + Count + "]";
+			}
 		}
 	}
 
@@ -346,6 +357,11 @@ namespace RegulatedNoise.Core.DomainModel
 		{
 			return item.StationID;
 		}
+
+		public override string ToString()
+		{
+			return Commodity + " Market [" + Count + "]";
+		}
 	}
 
 	public class StationMarket : Market
@@ -367,6 +383,11 @@ namespace RegulatedNoise.Core.DomainModel
 		protected override string GetKeyForItem(MarketDataRow item)
 		{
 			return item.CommodityName;
+		}
+
+		public override string ToString()
+		{
+			return StationName + " Market [" + Count + "]";
 		}
 	}
 }

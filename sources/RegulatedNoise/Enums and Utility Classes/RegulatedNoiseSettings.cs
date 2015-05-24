@@ -396,7 +396,7 @@ namespace RegulatedNoise
 		{
 			//Already set, no reason to set it again :)
 			if (ProductsPath != "" && GamePath != "") return;
-			EventBus.InitializationStart("product pathes set");
+			EventBus.Start("product pathes set");
 			//Automatic
 			var path = GetProductPathAutomatically();
 			//Automatic failed, Ask user to find it manually
@@ -442,7 +442,7 @@ namespace RegulatedNoise
 				dirs = Directory.GetDirectories(path);
 			}
 			ProductsPath = path;
-			EventBus.InitializationCompleted("product pathes set");
+			EventBus.Completed("product pathes set");
 		}
 
 		private static string GetProductAppDataPathAutomatically()
@@ -483,7 +483,7 @@ namespace RegulatedNoise
 		{
 			//Already set, no reason to set it again :)
 			if (ProductAppData != "") return;
-			EventBus.InitializationStart("product appdata set");
+			EventBus.Start("product appdata set");
 			//Automatic
 			var path = GetProductAppDataPathAutomatically();
 
@@ -498,7 +498,7 @@ namespace RegulatedNoise
 				path = GetProductAppDataPathManually();
 			}
 			ProductAppData = path;
-			EventBus.InitializationCompleted("product appdata set");
+			EventBus.Completed("product appdata set");
 		}
 
 		private static string GetProductPathAutomatically()
@@ -578,7 +578,7 @@ namespace RegulatedNoise
 
 		public static RegulatedNoiseSettings LoadSettings()
 		{
-			EventBus.InitializationStart("load settings");
+			EventBus.Start("load settings");
 			RegulatedNoiseSettings settings;
 
 			if (File.Exists(SETTINGS_FILENAME))
@@ -593,7 +593,7 @@ namespace RegulatedNoise
 					catch (Exception ex)
 					{
 						Trace.TraceError("Error loading settings: " + ex);
-						EventBus.InitializationProgress("Couldn't load settings; maybe they are from a previous version.  A new settings file will be created on exit.");
+						EventBus.Alert("Couldn't load settings; maybe they are from a previous version.  A new settings file will be created on exit.");
 						settings = new RegulatedNoiseSettings();
 					}
 				}
@@ -602,7 +602,7 @@ namespace RegulatedNoise
 			{
 				settings = new RegulatedNoiseSettings();
 			}
-			EventBus.InitializationCompleted("load settings");
+			EventBus.Completed("load settings");
 			settings.ExtraCheck();
 #if(!NO_PATH_INIT)
 			settings.SetProductPath();
