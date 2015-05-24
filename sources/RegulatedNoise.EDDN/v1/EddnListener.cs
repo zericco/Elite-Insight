@@ -28,8 +28,8 @@ namespace RegulatedNoise.EDDN.v1
 		{
 			try
 			{
-				//Debug.WriteLine("b1: " + frame.ReadByte() + " b2: " + frame.ReadByte());
-				frame.Seek(2, SeekOrigin.Begin); // skipping topic?
+				Debug.WriteLine("header: " + frame.ReadInt16());
+				//frame.Seek(2, SeekOrigin.Begin); // skipping topic?
 				string message;
 				using (var unzipper = new DeflateStream(frame, CompressionMode.Decompress))
 				{

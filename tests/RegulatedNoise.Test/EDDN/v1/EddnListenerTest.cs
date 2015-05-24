@@ -11,17 +11,17 @@ using System;
 using System.Diagnostics;
 using System.Text;
 using System.Threading;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NUnit.Framework;
 using RegulatedNoise.EDDN.v1;
 
-namespace RegulatedNoise.Test.EDDN
+namespace RegulatedNoise.Test.EDDN.v1
 {
-	[TestClass]
+	[TestFixture]
 	public class EddnListenerTest
 	{
-		[TestMethod]
+		[Test]
 		//[Ignore()]
-		public void i_can_receive_eddn_message_v1()
+		public void i_can_receive_eddn_message()
 		{
 			int messageCount = 5;
 			using (var eddn = new EddnListener())
@@ -38,7 +38,7 @@ namespace RegulatedNoise.Test.EDDN
 			}
 		}
 
-		[TestMethod]
+		[Test]
 		public void foo()
 		{
 			byte[] read = new byte[] {120, 156};

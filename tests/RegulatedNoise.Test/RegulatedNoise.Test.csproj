@@ -38,6 +38,9 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>$(SolutionDir)packages\Newtonsoft.Json.6.0.8\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
+    <Reference Include="nunit.framework">
+      <HintPath>..\..\packages\NUnit.2.6.4\lib\nunit.framework.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Net.Http" />
@@ -49,8 +52,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="EDDN\EddnListenerTest.cs" />
-    <Compile Include="EDDN\EddnPublisherTest.cs" />
+    <Compile Include="EDDN\v1\EddnListenerTest.cs" />
+    <Compile Include="EDDN\v1\EddnPublisherTest.cs" />
+    <Compile Include="EDDN\v2\EddnPublisherTest.cs" />
     <Compile Include="GalacticMarketTest.cs" />
     <Compile Include="DataProviders\EddbDataProviderTest.cs" />
     <Compile Include="DataProviders\EDSCDataProviderTest.cs" />

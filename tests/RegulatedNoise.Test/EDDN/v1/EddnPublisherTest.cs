@@ -12,7 +12,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using RegulatedNoise.Core.DomainModel;
 using RegulatedNoise.EDDN.v1;
 
-namespace RegulatedNoise.Test.EDDN
+namespace RegulatedNoise.Test.EDDN.v1
 {
 	[TestClass]
 	public class EddnPublisherTest

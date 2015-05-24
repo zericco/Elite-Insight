@@ -47,6 +47,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="EddnListenerBase.cs" />
+    <Compile Include="EddnPublisherBase.cs" />
     <Compile Include="EddnPublisherStatisticCollection.cs" />
     <Compile Include="EddnPublisherVersionStats.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -55,9 +56,9 @@
     <Compile Include="v1\EddnMessageEventArgs.cs" />
     <Compile Include="v1\EddnPublisher.cs" />
     <Compile Include="v1\EddnService.cs" />
-    <Compile Include="v2\EddnListener.cs" />
     <Compile Include="v2\EddnMessage.cs" />
     <Compile Include="v2\EddnMessageEventArgs.cs" />
+    <Compile Include="v2\EddnPublisher.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\RegulatedNoise.Core\RegulatedNoise.Core.csproj">

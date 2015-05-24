@@ -69,11 +69,11 @@ namespace RegulatedNoise.EDDN.v2
 
 		public class Commodity
 		{
-			[JsonProperty(PropertyName = "itemName")]
+			[JsonProperty(PropertyName = "name")]
 			public string CommodityName { get; set; }
 			[JsonProperty(PropertyName = "buyPrice")]
 			public int BuyPrice { get; set; }
-			[JsonProperty(PropertyName = "stationStock")]
+			[JsonProperty(PropertyName = "supply")]
 			public int Supply { get; set; }
 			[JsonProperty(PropertyName = "supplyLevel", NullValueHandling = NullValueHandling.Ignore)]
 			[JsonConverter(typeof(StringEnumConverter))]
