@@ -30,6 +30,10 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\packages\Newtonsoft.Json.6.0.8\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -42,10 +46,17 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="EddnListenerBase.cs" />
+    <Compile Include="EddnPublisherStatisticCollection.cs" />
     <Compile Include="EddnPublisherVersionStats.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="v1\EddnListener.cs" />
+    <Compile Include="v1\EddnMessage.cs" />
     <Compile Include="v1\EddnMessageEventArgs.cs" />
+    <Compile Include="v1\EddnPublisher.cs" />
     <Compile Include="v1\EddnService.cs" />
+    <Compile Include="v2\EddnListener.cs" />
+    <Compile Include="v2\EddnMessage.cs" />
     <Compile Include="v2\EddnMessageEventArgs.cs" />
   </ItemGroup>
   <ItemGroup>

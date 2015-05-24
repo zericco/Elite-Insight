@@ -49,7 +49,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="EDDN\EddnServiceTest.cs" />
+    <Compile Include="EDDN\EddnListenerTest.cs" />
+    <Compile Include="EDDN\EddnPublisherTest.cs" />
     <Compile Include="GalacticMarketTest.cs" />
     <Compile Include="DataProviders\EddbDataProviderTest.cs" />
     <Compile Include="DataProviders\EDSCDataProviderTest.cs" />
@@ -76,9 +77,17 @@
       <Project>{1c6e84c0-a944-48be-b196-6e6278b1f7d7}</Project>
       <Name>RegulatedNoise.Core</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\sources\RegulatedNoise.DataProviders\RegulatedNoise.DataProviders.csproj">
+      <Project>{63484a32-ccb7-4fec-b742-505ee37e7346}</Project>
+      <Name>RegulatedNoise.DataProviders</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\sources\RegulatedNoise.EDDN\RegulatedNoise.EDDN.csproj">
       <Project>{ABD135F3-C878-4837-927F-6117649119EF}</Project>
       <Name>RegulatedNoise.EDDN</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\sources\RegulatedNoise.OCR\RegulatedNoise.OCR.csproj">
+      <Project>{a3334f73-4ca5-45d6-a7bf-844de11464f1}</Project>
+      <Name>RegulatedNoise.OCR</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

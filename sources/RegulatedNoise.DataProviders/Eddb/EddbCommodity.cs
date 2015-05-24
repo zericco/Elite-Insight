@@ -9,7 +9,7 @@
 
 using Newtonsoft.Json;
 
-namespace RegulatedNoise.Core.DataProviders.Eddn
+namespace RegulatedNoise.DataProviders.Eddb
 {
 	public class EddbCommodity
 	{

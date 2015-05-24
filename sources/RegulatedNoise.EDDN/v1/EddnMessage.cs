@@ -12,7 +12,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using RegulatedNoise.Core.DomainModel;
 
-namespace RegulatedNoise.Core.DataProviders.Eddn.v1
+namespace RegulatedNoise.EDDN.v1
 {
 	public class EddnMessage
 	{
@@ -83,7 +83,7 @@ namespace RegulatedNoise.Core.DataProviders.Eddn.v1
 			[JsonConverter(typeof(StringEnumConverter))]
 			public ProposalLevel? DemandLevel { get; set; }
 			[JsonIgnore]
-			public string Source { get; set; }
+			public string Source { get { return "EDDN"; } }
 
 			public override string ToString()
 			{

@@ -12,7 +12,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using RegulatedNoise.Core.DomainModel;
 
-namespace RegulatedNoise.Core.DataProviders.Eddn.v2
+namespace RegulatedNoise.EDDN.v2
 {
 	public class EddnMessage
 	{
@@ -64,17 +64,15 @@ namespace RegulatedNoise.Core.DataProviders.Eddn.v2
 			[JsonProperty(PropertyName = "commodities")]
 			public Commodity[] Commodities { get; set; }
 			[JsonIgnore]
-			public string Source { get; set; }
+			public string Source { get { return "EDDN"; } }
 		}
 
 		public class Commodity
 		{
-			[JsonProperty(PropertyName = "timestamp")]
-			public DateTime Timestamp { get; set; }
 			[JsonProperty(PropertyName = "itemName")]
 			public string CommodityName { get; set; }
-			[JsonProperty(PropertyName = "buyPrice", NullValueHandling = NullValueHandling.Ignore)]
-			public int? BuyPrice { get; set; }
+			[JsonProperty(PropertyName = "buyPrice")]
+			public int BuyPrice { get; set; }
 			[JsonProperty(PropertyName = "stationStock")]
 			public int Supply { get; set; }
 			[JsonProperty(PropertyName = "supplyLevel", NullValueHandling = NullValueHandling.Ignore)]

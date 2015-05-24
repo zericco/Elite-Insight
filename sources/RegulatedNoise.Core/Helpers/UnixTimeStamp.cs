@@ -11,7 +11,7 @@ using System;
 
 namespace RegulatedNoise.Core.Helpers
 {
-	static class UnixTimeStamp
+	public static class UnixTimeStamp
 	{
 		private static DateTime _unixTimeStampToDateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Utc);
 

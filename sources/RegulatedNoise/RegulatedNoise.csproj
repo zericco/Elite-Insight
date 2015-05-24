@@ -1,3 +1,4 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
@@ -781,6 +782,10 @@
     <ProjectReference Include="$(SolutionDir)sources\RegulatedNoise.Core\RegulatedNoise.Core.csproj">
       <Project>{1c6e84c0-a944-48be-b196-6e6278b1f7d7}</Project>
       <Name>RegulatedNoise.Core</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\RegulatedNoise.DataProviders\RegulatedNoise.DataProviders.csproj">
+      <Project>{63484a32-ccb7-4fec-b742-505ee37e7346}</Project>
+      <Name>RegulatedNoise.DataProviders</Name>
     </ProjectReference>
     <ProjectReference Include="..\RegulatedNoise.EDDN\RegulatedNoise.EDDN.csproj">
       <Project>{abd135f3-c878-4837-927f-6117649119ef}</Project>

@@ -1,4 +1,4 @@
-﻿#region file header
+#region file header
 // ////////////////////////////////////////////////////////////////////
 // ///
 // ///  
@@ -17,9 +17,9 @@ using RegulatedNoise.Core.DomainModel;
 using RegulatedNoise.Core.Helpers;
 using RegulatedNoise.Core.Messaging;
 
-namespace RegulatedNoise.Core.DataProviders.Eddn
+namespace RegulatedNoise.DataProviders.Eddb
 {
-	internal class EddbDataProvider
+	public class EddbDataProvider
 	{
 		private readonly Dictionary<int, string> _systemIdToNameMap;
 		private readonly Dictionary<int, string> _commodityNameMap;

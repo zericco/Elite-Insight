@@ -4,8 +4,8 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using RegulatedNoise.Core.DataProviders;
 using RegulatedNoise.Core.DomainModel;
+using RegulatedNoise.DataProviders;
 
 namespace RegulatedNoise.Test.DataProviders
 {

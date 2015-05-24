@@ -1,7 +1,7 @@
 ﻿using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using RegulatedNoise.Core.DataProviders.Eddn;
 using RegulatedNoise.Core.DomainModel;
+using RegulatedNoise.DataProviders.Eddb;
 
 namespace RegulatedNoise.Test.DataProviders
 {

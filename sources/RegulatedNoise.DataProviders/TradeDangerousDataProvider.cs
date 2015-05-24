@@ -8,7 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using RegulatedNoise.Core.DomainModel;
 
-namespace RegulatedNoise.Core.DataProviders
+namespace RegulatedNoise.DataProviders
 {
 	public class TradeDangerousDataProvider
 	{

@@ -9,8 +9,8 @@
 #endregion
 
 using System.Diagnostics;
-using RegulatedNoise.Core.DataProviders;
 using RegulatedNoise.Core.DomainModel;
+using RegulatedNoise.DataProviders;
 using RegulatedNoise.EDDB_Data;
 
 namespace RegulatedNoise

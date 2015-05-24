@@ -8,8 +8,8 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using CodeProject.Dialog;
 using Newtonsoft.Json;
-using RegulatedNoise.Core.DataProviders;
 using RegulatedNoise.Core.DomainModel;
+using RegulatedNoise.DataProviders;
 using RegulatedNoise.EDDB_Data;
 using RegulatedNoise.Enums_and_Utility_Classes;
 

@@ -8,7 +8,6 @@
 #endregion
 
 using System;
-using RegulatedNoise.Core.DataProviders.Eddn.v1;
 
 namespace RegulatedNoise.EDDN.v1
 {
