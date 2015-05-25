@@ -7,9 +7,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using CodeProject.Dialog;
+using Elite.Insight.Core.DomainModel;
+using Elite.Insight.DataProviders;
 using Newtonsoft.Json;
-using RegulatedNoise.Core.DomainModel;
-using RegulatedNoise.DataProviders;
 using RegulatedNoise.EDDB_Data;
 using RegulatedNoise.Enums_and_Utility_Classes;
 

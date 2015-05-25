@@ -12,10 +12,10 @@ using System.Windows.Forms;
 using System.Xml;
 using System.Xml.Serialization;
 using CodeProject.Dialog;
+using Elite.Insight.Annotations;
+using Elite.Insight.Core.Messaging;
 using Microsoft.Win32;
 using Newtonsoft.Json;
-using RegulatedNoise.Annotations;
-using RegulatedNoise.Core.Messaging;
 using RegulatedNoise.Enums_and_Utility_Classes;
 using RegulatedNoise.Exceptions;
 

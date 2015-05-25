@@ -11,9 +11,9 @@
 using System;
 using System.Diagnostics;
 using System.IO;
-using RegulatedNoise.Core.DomainModel;
-using RegulatedNoise.Core.EliteInteractions;
-using RegulatedNoise.Core.Messaging;
+using Elite.Insight.Core.DomainModel;
+using Elite.Insight.Core.EliteInteractions;
+using Elite.Insight.Core.Messaging;
 using RegulatedNoise.Enums_and_Utility_Classes;
 
 namespace RegulatedNoise

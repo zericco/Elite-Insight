@@ -11,11 +11,11 @@ using System.Net;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
-using RegulatedNoise.Annotations;
-using RegulatedNoise.Core.DomainModel;
-using RegulatedNoise.Core.Messaging;
+using Elite.Insight.Annotations;
+using Elite.Insight.Core.DomainModel;
+using Elite.Insight.Core.Messaging;
+using Elite.Insight.EDDN;
 using RegulatedNoise.EDDB_Data;
-using RegulatedNoise.EDDN;
 using RegulatedNoise.Enums_and_Utility_Classes;
 using ZeroMQ;
 

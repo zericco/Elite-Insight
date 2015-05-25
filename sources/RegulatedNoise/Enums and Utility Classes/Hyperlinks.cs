@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using RegulatedNoise.Core.DomainModel;
+using Elite.Insight.Core.DomainModel;
 using RegulatedNoise.Enums_and_Utility_Classes;
 
 namespace RegulatedNoise

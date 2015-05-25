@@ -11,7 +11,7 @@ using System.Drawing.Imaging;
 using Tesseract;
 using System.Windows.Forms;
 using System.Runtime.InteropServices;
-using RegulatedNoise.Core.Algorithms;
+using Elite.Insight.Core.Algorithms;
 using RegulatedNoise.EDDB_Data;
 using RegulatedNoise.Enums_and_Utility_Classes;
 

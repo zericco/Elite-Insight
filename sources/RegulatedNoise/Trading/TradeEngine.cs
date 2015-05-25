@@ -4,8 +4,8 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using RegulatedNoise.Core.DomainModel;
-using RegulatedNoise.Core.DomainModel.Trading;
+using Elite.Insight.Core.DomainModel;
+using Elite.Insight.Core.DomainModel.Trading;
 
 namespace RegulatedNoise.Trading
 {

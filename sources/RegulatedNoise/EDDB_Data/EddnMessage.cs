@@ -1,6 +1,6 @@
 ﻿using System;
+using Elite.Insight.Core.DomainModel;
 using Newtonsoft.Json;
-using RegulatedNoise.Core.DomainModel;
 
 namespace RegulatedNoise.EDDB_Data
 {

@@ -774,21 +774,21 @@
       <Project>{236a934b-5543-4751-baa2-018dfa825271}</Project>
       <Name>EdClasses</Name>
     </ProjectReference>
-    <ProjectReference Include="$(SolutionDir)sources\RegulatedNoise.Core\RegulatedNoise.Core.csproj">
+    <ProjectReference Include="..\Elite.Insight.Core\Elite.Insight.Core.csproj">
       <Project>{1c6e84c0-a944-48be-b196-6e6278b1f7d7}</Project>
-      <Name>RegulatedNoise.Core</Name>
+      <Name>Elite.Insight.Core</Name>
     </ProjectReference>
-    <ProjectReference Include="..\RegulatedNoise.DataProviders\RegulatedNoise.DataProviders.csproj">
+    <ProjectReference Include="..\Elite.Insight.DataProviders\Elite.Insight.DataProviders.csproj">
       <Project>{63484a32-ccb7-4fec-b742-505ee37e7346}</Project>
-      <Name>RegulatedNoise.DataProviders</Name>
+      <Name>Elite.Insight.DataProviders</Name>
     </ProjectReference>
-    <ProjectReference Include="..\RegulatedNoise.EDDN\RegulatedNoise.EDDN.csproj">
+    <ProjectReference Include="..\Elite.Insight.EDDN\Elite.Insight.EDDN.csproj">
       <Project>{abd135f3-c878-4837-927f-6117649119ef}</Project>
-      <Name>RegulatedNoise.EDDN</Name>
+      <Name>Elite.Insight.EDDN</Name>
     </ProjectReference>
-    <ProjectReference Include="..\RegulatedNoise.OCR\RegulatedNoise.OCR.csproj">
+    <ProjectReference Include="..\Elite.Insight.OCR\Elite.Insight.OCR.csproj">
       <Project>{a3334f73-4ca5-45d6-a7bf-844de11464f1}</Project>
-      <Name>RegulatedNoise.OCR</Name>
+      <Name>Elite.Insight.OCR</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
