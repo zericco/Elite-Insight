@@ -78,9 +78,12 @@ namespace RegulatedNoise.Trading
 
 		    foreach(string stationFrom in stationPerimeter)
 		    {
-			    foreach (string stationTo in stationPerimeter.Reverse())
+				 if (cancellationToken.IsCancellationRequested)
+					 break;
+				 foreach (string stationTo in stationPerimeter.Reverse())
 			    {
-				    cancellationToken.ThrowIfCancellationRequested();
+				    if (cancellationToken.IsCancellationRequested)
+					    break;
 				    int lexicalOrder = String.Compare(stationFrom, stationTo, StringComparison.InvariantCultureIgnoreCase);
 				    if (lexicalOrder == 0) // same stations
 				    {

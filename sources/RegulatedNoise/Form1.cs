@@ -123,12 +123,16 @@ namespace RegulatedNoise
 				Task initContext = Task.Factory.StartNew(() =>
 				{
 					var eddb = new EddbDataProvider();
-					eddb.ImportData(ApplicationContext.Model);
+					FileInfo autoSave = new FileInfo("AutoSave.csv");
+					bool useOwnMarketData = autoSave.Exists &&
+					                        autoSave.LastWriteTime >
+					                        new FileInfo(EddbDataProvider.EDDB_STATIONS_FULL_DATAFILE).LastWriteTime;
+					eddb.ImportData(ApplicationContext.Model, !useOwnMarketData, ImportMode.Import);
 					EventBus.Start("load collected market data");
-					if (File.Exists("AutoSave.csv"))
+					if (autoSave.Exists)
 					{
 						_logger.Log("  - found autosaved CSV");
-						CsvDataProvider.RetrieveMarketData(new FileInfo("AutoSave.csv"), ApplicationContext.Model);
+						CsvDataProvider.RetrieveMarketData(autoSave, ApplicationContext.Model);
 						_logger.Log("  - imported CSVs");
 					}
 					EventBus.Completed("load collected market data");
@@ -271,7 +275,6 @@ namespace RegulatedNoise
 						LoadStationData(tbCurrentSystemFromLogs.Text, tbCurrentStationinfoFromLogs.Text);
 						showSystemNumbers();
 					}, new CancellationToken(), TaskContinuationOptions.None, TaskScheduler.FromCurrentSynchronizationContext());
-
 #if(DEBUG)
 				var testTab = new TabPage("Testing");
 				var tester = new TestTab.TestTab();

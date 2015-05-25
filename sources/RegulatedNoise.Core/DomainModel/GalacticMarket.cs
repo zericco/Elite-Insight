@@ -171,12 +171,28 @@ namespace RegulatedNoise.Core.DomainModel
 			return update;
 		}
 
-		public void UpdateRange([NotNull] IEnumerable<MarketDataRow> marketDataRows)
+		public void Import([NotNull] IEnumerable<MarketDataRow> marketDataRows)
 		{
 			if (marketDataRows == null) throw new ArgumentNullException("marketDataRows");
-			foreach (MarketDataRow marketDataRow in marketDataRows)
+			lock (_updating)
 			{
-				Update(marketDataRow);
+				foreach (MarketDataRow marketDataRow in marketDataRows)
+				{
+					_allMarketDatas.Add(marketDataRow);
+					_byStation.Add(marketDataRow);
+					_byCommodity.Add(marketDataRow);
+				}
+			}
+		}
+
+		public void Import([NotNull] MarketDataRow marketDataRow)
+		{
+			if (marketDataRow == null) throw new ArgumentNullException("marketDataRow");
+			lock (_updating)
+			{
+				_allMarketDatas.Add(marketDataRow);
+				_byStation.Add(marketDataRow);
+				_byCommodity.Add(marketDataRow);
 			}
 		}
 

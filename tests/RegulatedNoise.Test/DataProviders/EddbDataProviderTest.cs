@@ -13,7 +13,7 @@ namespace RegulatedNoise.Test.DataProviders
 		{
 			var eddb = new EddbDataProvider();
 			var model = new DataModel(new TestLocalizer(), new TestValidator());
-			eddb.ImportData(model);
+			eddb.ImportData(model, ImportMode.Import);
 		}
 	}
 

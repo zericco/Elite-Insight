@@ -54,7 +54,7 @@ namespace RegulatedNoise.DataProviders
 						{
 							++lineCount;
 							model.GalacticMarket.Update(MarketDataRow.ReadCsv(line));
-							EventBus.Progress("parsing csv data", lineCount, lineCount + 1);
+							EventBus.Progress("parsing csv data", lineCount, lineCount + 10);
 						}
 						catch (Exception ex)
 						{

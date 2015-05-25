@@ -24,16 +24,18 @@ namespace RegulatedNoise.DataProviders.Eddb
 	{
 		private readonly Dictionary<int, string> _systemIdToNameMap;
 		private readonly Dictionary<int, string> _commodityNameMap;
-		private const string EDDB_COMMODITIES_DATAFILE = @"./Data/commodities.json";
-		private const string EDDB_STATIONS_LITE_DATAFILE = @"./Data/stations_lite.json";
-		private const string EDDB_STATIONS_FULL_DATAFILE = @"./Data/stations.json";
-		private const string EDDB_SYSTEMS_DATAFILE = @"./Data/systems.json";
+		public const string EDDB_COMMODITIES_DATAFILE = @"./Data/commodities.json";
+		public const string EDDB_STATIONS_LITE_DATAFILE = @"./Data/stations_lite.json";
+		public const string EDDB_STATIONS_FULL_DATAFILE = @"./Data/stations.json";
+		public const string EDDB_SYSTEMS_DATAFILE = @"./Data/systems.json";
 
-		private const string EDDB_COMMODITIES_URL = @"http://eddb.io/archive/v3/commodities.json";
-		private const string EDDB_SYSTEMS_URL = @"http://eddb.io/archive/v3/systems.json";
-		private const string EDDB_STATIONS_LITE_URL = @"http://eddb.io/archive/v3/stations_lite.json";
+		public const string EDDB_COMMODITIES_URL = @"http://eddb.io/archive/v3/commodities.json";
+		public const string EDDB_SYSTEMS_URL = @"http://eddb.io/archive/v3/systems.json";
+		public const string EDDB_STATIONS_LITE_URL = @"http://eddb.io/archive/v3/stations_lite.json";
 		public const string SOURCENAME = "EDDB";
 		private const string EDDB_STATIONS_FULL_URL = @"http://eddb.io/archive/v3/stations.json";
+
+		public ImportMode ImportMode { get; protected set; }
 
 		public EddbDataProvider()
 		{
@@ -41,16 +43,24 @@ namespace RegulatedNoise.DataProviders.Eddb
 			_commodityNameMap = new Dictionary<int, string>();
 		}
 
-		public void ImportData(DataModel model)
+		public void ImportData(DataModel model, bool importMarketData, ImportMode importMode)
 		{
 			if (model == null)
 			{
 				throw new ArgumentNullException("model");
 			}
+			ImportMode = importMode;
 			DownloadDataFiles();
 			ImportSystems(model.StarMap);
 			ImportCommodities(model.Commodities);
-			ImportStations(model.StarMap, model.GalacticMarket);
+			if (importMarketData)
+			{
+				ImportStations(model.StarMap, model.GalacticMarket);
+			}
+			else
+			{
+				ImportStations(model.StarMap);				
+			}
 		}
 
 		private void ImportCommodities(Commodities commodities)
@@ -80,10 +90,10 @@ namespace RegulatedNoise.DataProviders.Eddb
 			return commodity;
 		}
 
-		private void ImportStations(StarMap starMap, GalacticMarket market)
+		private void ImportStations(StarMap starMap, GalacticMarket market = null)
 		{
 			int count = 0;
-			if (File.Exists(EDDB_STATIONS_FULL_DATAFILE))
+			if (File.Exists(EDDB_STATIONS_FULL_DATAFILE) && market != null)
 			{
 				EventBus.Progress("parsing stations data file...", 0, 1);
 				List<EddbStation> eddbStations = SerializationHelpers.ReadJsonFromFile<List<EddbStation>>(new FileInfo(EDDB_STATIONS_FULL_DATAFILE));
@@ -117,7 +127,14 @@ namespace RegulatedNoise.DataProviders.Eddb
 			int count = 0;
 			foreach (EddbStation.MarketData marketData in station.MarketDatas)
 			{
-				market.Update(ToMarketData(marketData, station.Name, RetrieveSystemName(station.SystemId)));
+				if (ImportMode == ImportMode.Update)
+				{
+					market.Update(ToMarketData(marketData, station.Name, RetrieveSystemName(station.SystemId)));
+				}
+				else
+				{
+					market.Import(ToMarketData(marketData, station.Name, RetrieveSystemName(station.SystemId)));
+				}
 				++count;
 			}
 		}
@@ -337,5 +354,11 @@ namespace RegulatedNoise.DataProviders.Eddb
 			}
 			EventBus.Progress("completed download of " + contentDescription, 2, 2, correlationId);
 		}
+	}
+
+	public enum ImportMode
+	{
+		Import,
+		Update
 	}
 }
