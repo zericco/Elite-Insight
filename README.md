@@ -14,9 +14,12 @@
 - EDDN Communication
   listen to EDDN for up-to-date prices
     export prices to EDDN
-- Commanders Log (inherited from [https://github.com/Duke-Jones/RegulatedNoise/releases](RegulatedNoise)) (needs log activation)
+- Commanders Log (inherited from RegulatedNoise) (needs log activation)
   watch Elite logs to retrieve pilot name and location
-- built-in, quick OCR (inherited from [https://github.com/seeebek/EliteOCR](Elite-OCR))
+- built-in, quick OCR (inherited from EliteBrainerous)
   allow to read Elite Dangerous screen and import market prices into Elite Insight 
-- plausibilitycheck imported market prices ((inherited from [https://github.com/Duke-Jones/RegulatedNoise/releases](RegulatedNoise))
+- plausibilitycheck imported market prices ((inherited from RegulatedNoise)
   imported market prices are first analyzed, invalid data are discarded
+
+RegulatedNoise: https://github.com/Duke-Jones/RegulatedNoise/releases
+Elite Brainerous: https://github.com/CapCap/EliteBrainerous
