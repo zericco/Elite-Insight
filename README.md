@@ -1,6 +1,6 @@
-Elite Insight
+#Elite Insight
 
-Elite dangerous companion, swiss knife which help you find anything and communicate with eddn.
+##Elite dangerous companion, swiss knife which help you find anything and communicate with eddn.
 
 ==============
 - provide system and station data
