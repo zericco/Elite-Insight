@@ -9,6 +9,9 @@ namespace Elite.Insight.Core.DomainModel
 		private string _localizedName;
 		private string _name;
 
+		[JsonProperty("id")]
+		public long Id { get; set; }
+
 		[JsonProperty("name")]
 		public string Name
 		{

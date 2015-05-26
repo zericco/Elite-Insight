@@ -13,6 +13,9 @@ namespace Elite.Insight.Core.DomainModel
     {
         private string _name;
 
+		  [JsonProperty("id")]
+		  public long Id { get; set; }
+
         [JsonProperty("name")]
         public string Name
         {
@@ -82,7 +85,6 @@ namespace Elite.Insight.Core.DomainModel
 
         [JsonProperty("updated_at")]
         public int UpdatedAt { get; set; }
-
 
         /// <summary>
         /// creates a new station 

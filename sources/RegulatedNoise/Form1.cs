@@ -4826,7 +4826,7 @@ namespace RegulatedNoise
 			}
 
 			lblSystemCountTotal.Text = ApplicationContext.Model.StarMap.Count.ToString();
-			lblStationCountTotal.Text = ApplicationContext.Model.StarMap.StationsCount.ToString();
+			lblStationCountTotal.Text = ApplicationContext.Model.StarMap.Stations.Count.ToString();
 		}
 
 

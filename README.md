@@ -22,4 +22,5 @@
   imported market prices are first analyzed, invalid data are discarded
 
 RegulatedNoise: https://github.com/Duke-Jones/RegulatedNoise/releases
+
 Elite Brainerous: https://github.com/CapCap/EliteBrainerous

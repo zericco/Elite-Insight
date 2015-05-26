@@ -63,7 +63,7 @@ namespace Elite.Insight.DataProviders.Eddb
 			}
 		}
 
-		private void ImportCommodities(Commodities commodities)
+		internal void ImportCommodities(Commodities commodities)
 		{
 			List<EddbCommodity> eddbCommodities = SerializationHelpers.ReadJsonFromFile<List<EddbCommodity>>(new FileInfo(EDDB_COMMODITIES_DATAFILE));
 			int count = 0;
@@ -90,7 +90,7 @@ namespace Elite.Insight.DataProviders.Eddb
 			return commodity;
 		}
 
-		private void ImportStations(StarMap starMap, GalacticMarket market = null)
+		internal void ImportStations(StarMap starMap, GalacticMarket market = null)
 		{
 			int count = 0;
 			if (File.Exists(EDDB_STATIONS_FULL_DATAFILE) && market != null)
@@ -222,7 +222,7 @@ namespace Elite.Insight.DataProviders.Eddb
 			return _systemIdToNameMap[systemId];
 		}
 
-		private void ImportSystems(StarMap starMap)
+		internal void ImportSystems(StarMap starMap)
 		{
 			List<EddbSystem> eddbSystems = SerializationHelpers.ReadJsonFromFile<List<EddbSystem>>(new FileInfo(EDDB_SYSTEMS_DATAFILE));
 			int correlationId = EventBus.Start("importing systems...", eddbSystems.Count);
@@ -306,7 +306,7 @@ namespace Elite.Insight.DataProviders.Eddb
 			}
 		}
 
-		private static void DownloadDataFiles()
+		internal void DownloadDataFiles()
 		{
 			var tasks = new List<Task>();
 			int correlationId = EventBus.Start("trying to download data files...");

@@ -30,7 +30,7 @@ namespace Elite.Insight.Core.DomainModel
 			get { return _systems.Count; }
 		}
 
-		public int StationsCount { get { return _stations.Count; } }
+		public IReadOnlyCollection<Station> Stations { get { return _stations; } }
 
 		public void Remove(Station station)
 		{
