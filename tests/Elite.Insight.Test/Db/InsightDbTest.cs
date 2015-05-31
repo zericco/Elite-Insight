@@ -34,7 +34,7 @@ namespace Elite.Insight.Test.Db
 
 		[Test]
 		[Ignore]
-		public void i_can_insert_a_system()
+		public void i_can_insert_systems()
 		{
 			var db = new InsightDb(TEST_DB_PATH);
 			DataModel model = new DataModel(new TestLocalizer(), new TestValidator());
@@ -47,6 +47,23 @@ namespace Elite.Insight.Test.Db
 			{
 				DisplaySystems(cx);
 			}
+		}
+
+		[Test]
+		[Ignore]
+		public void i_can_initialize_db_from_eddb()
+		{
+			var db = new InsightDb(TEST_DB_PATH);
+			DataModel model = new DataModel(new TestLocalizer(), new TestValidator());
+			EddbDataProvider eddb = new EddbDataProvider();
+			eddb.DownloadDataFiles();
+			eddb.ImportSystems(model.StarMap);
+			eddb.ImportStations(model.StarMap);
+			eddb.ImportCommodities(model.Commodities);
+			////CsvDataProvider.RetrieveMarketData(new FileInfo("Autosave.csv"), model);
+			db.StoreSystems(model.StarMap);
+			db.StoreStations(model.StarMap.Stations);
+			db.StoreCommodities(model.Commodities);
 		}
 
 		[Test]

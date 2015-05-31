@@ -331,6 +331,7 @@ namespace Elite.Insight.Core
 													,security
 													,primaryEconomy
 													,needsPermit
+													,source
 													,lastUpdate)
 												VALUES ("
 												+ starSystem.Id + ","
@@ -346,6 +347,7 @@ namespace Elite.Insight.Core
 												+ DbExtension.ToParameter(starSystem.Security) + ","
 												+ DbExtension.ToParameter(starSystem.PrimaryEconomy) + ","
 												+ DbExtension.ToParameter(starSystem.NeedsPermit) + ","
+												+ DbExtension.ToParameter(starSystem.Source) + ","
 												+ DbExtension.ToParameter(starSystem.UpdatedAt)
 												+ ")";
 						cmd.ExecuteNonQuery();
@@ -382,12 +384,13 @@ namespace Elite.Insight.Core
 					try
 					{
 						cmd.CommandText = @"INSERT INTO commodities
-												(id,name,category
+												(id,name,category, source
 													,lastUpdate)
 												VALUES ("
 												+ commodity.Id + ","
 												+ DbExtension.ToParameter(commodity.Name) + ","
 												+ DbExtension.ToParameter(commodity.Category) + ","
+												+ DbExtension.ToParameter(commodity.Source) + ","
 												+ DbExtension.ToParameter(DateTime.Now)
 												+ ")";
 						cmd.ExecuteNonQuery();
@@ -439,6 +442,7 @@ namespace Elite.Insight.Core
 													,ExportCommodities
 													,ProhibitedCommodities
 													,Economies
+													,source
 													,lastUpdate)
 												VALUES ("
 												+ station.Id + ","
@@ -463,6 +467,7 @@ namespace Elite.Insight.Core
 												+ DbExtension.ToParameter(station.ExportCommodities) + ","
 												+ DbExtension.ToParameter(station.ProhibitedCommodities) + ","
 												+ DbExtension.ToParameter(station.Economies) + ","
+												+ DbExtension.ToParameter(station.Source) + ","
 												+ DbExtension.ToParameter(station.UpdatedAt)
 												+ ")";
 						cmd.ExecuteNonQuery();
@@ -506,6 +511,7 @@ namespace Elite.Insight.Core
 													,demandLevel
 													,supply
 													,supplyLevel
+													,source
 													,lastUpdate) VALUES ("
 												+ DbExtension.ToParameter(commodityId) + ","
 												+ DbExtension.ToParameter(stationId) + ","
@@ -515,6 +521,7 @@ namespace Elite.Insight.Core
 												+ DbExtension.ToParameter(marketData.DemandLevel) + ","
 												+ DbExtension.ToParameter(marketData.Supply) + ","
 												+ DbExtension.ToParameter(marketData.SupplyLevel) + ","
+												+ DbExtension.ToParameter(marketData.Source) + ","
 												+ DbExtension.ToParameter(marketData.SampleDate)
 												+ ")";
 						cmd.ExecuteNonQuery();
@@ -693,6 +700,23 @@ namespace Elite.Insight.Core
 			}
 		}
 
+		private static void CreateCommodityStatisticsTable(SQLiteConnection cx)
+		{
+			using (var cmd = cx.CreateCommand())
+			{
+				cmd.CommandText = @"CREATE TABLE IF NOT EXISTS commodityStatistics
+												(
+													commodityId INTEGER PRIMARY KEY
+													,averagePrice INTEGER
+													,minBuyPrice INTEGER
+													,maxBuyPrice INTEGER
+													,minSellPrice INTEGER
+													,maxSellPrice INTEGER
+												);";
+				cmd.ExecuteNonQuery();
+			}
+		}
+
 		private static void CreateMarketDataTable(SQLiteConnection cx)
 		{
 			using (var cmd = cx.CreateCommand())
@@ -707,6 +731,7 @@ namespace Elite.Insight.Core
 													,demandLevel TEXT
 													,supply INTEGER
 													,supplyLevel TEXT
+													,source TEXT
 													,lastUpdate INTEGER
 												);
 												CREATE UNIQUE INDEX marketdata_station_commodity_idx ON marketdata(stationId, commodityId);
