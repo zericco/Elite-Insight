@@ -40,7 +40,7 @@ namespace Elite.Insight.Test
 				Demand = seed*20000,
 				SellPrice = seed*1700,
 				StationName = "aStation" + (seed/10).ToString("00"),
-				Stock = (seed%10)*10000,
+				Supply = (seed%10)*10000,
 				SystemName = "aSystem",
 				DemandLevel = ProposalLevel.Low,
 				SupplyLevel = ProposalLevel.High,

@@ -248,7 +248,7 @@ namespace Elite.Insight.Test.DomainModel
                 , ProhibitedCommodities = new [] { "c5" }
                 , Source = "mySource"
                 , State = "myState"
-                , System = "mySystem"
+                , SystemName = "mySystem"
                 , Type = "myType"
                 , UpdatedAt = 2};
         }

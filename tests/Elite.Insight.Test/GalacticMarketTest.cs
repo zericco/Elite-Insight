@@ -68,7 +68,7 @@ namespace Elite.Insight.Test
             galacticMarket.OnMarketDataUpdate += (sender, args) => events.Add(args);
             var marketData = NewMarketData(DateTime.Now);
             galacticMarket.Update(marketData);
-            Assert.IsTrue(galacticMarket.StationMarket(marketData.StationID).Any(m => m.MarketDataId == marketData.MarketDataId), "data is not available through station index");
+            Assert.IsTrue(galacticMarket.StationMarket(marketData.StationFullName).Any(m => m.MarketDataId == marketData.MarketDataId), "data is not available through station index");
         }
 
         [TestMethod]
@@ -101,7 +101,7 @@ namespace Elite.Insight.Test
             var marketData = NewMarketData(DateTime.Now);
             galacticMarket.Update(marketData);
             galacticMarket.Remove(marketData);
-            Assert.IsFalse(galacticMarket.StationMarket(marketData.StationID).Any(m => m.MarketDataId == marketData.MarketDataId), "data is not available through station index");
+            Assert.IsFalse(galacticMarket.StationMarket(marketData.StationFullName).Any(m => m.MarketDataId == marketData.MarketDataId), "data is not available through station index");
         }
 
         [TestMethod]

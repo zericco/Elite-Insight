@@ -12,7 +12,7 @@ namespace Elite.Insight.Test
         public void i_can_retrieve_station_name_from_stationId()
         {
             var marketData = new MarketDataRow() { SystemName = "aSystem", StationName = "aStation"};
-            Assert.AreEqual(marketData.StationName, MarketDataRow.StationIdToStationName(marketData.StationID), "unexpected station name extracted from stationId");
+            Assert.AreEqual(marketData.StationName, MarketDataRow.StationIdToStationName(marketData.StationFullName), "unexpected station name extracted from stationId");
         }
 
 		  [TestMethod]
@@ -39,7 +39,7 @@ namespace Elite.Insight.Test
         public void i_can_retrieve_system_name_from_stationId()
         {
             var marketData = new MarketDataRow() { SystemName = "aSystem", StationName = "aStation" };
-            Assert.AreEqual(marketData.SystemName, MarketDataRow.StationIdToSystemName(marketData.StationID), "unexpected station name extracted from stationId");
+            Assert.AreEqual(marketData.SystemName, MarketDataRow.StationIdToSystemName(marketData.StationFullName), "unexpected station name extracted from stationId");
         }
     }
 }

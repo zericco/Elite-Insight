@@ -62,9 +62,9 @@ namespace Elite.Insight.Core.DomainModel
 			lock (_updating)
 			{
 				StarSystem existingSystem;
-				if (!_systems.TryGetValue(station.System, out existingSystem))
+				if (!_systems.TryGetValue(station.SystemName, out existingSystem))
 				{
-					existingSystem = new StarSystem(station.System);
+					existingSystem = new StarSystem(station.SystemName);
 					_systems.Add(existingSystem);
 				}
 				existingSystem.UpdateStations(station);

@@ -18,12 +18,12 @@ namespace RegulatedNoise
             RowToEdit = marketDataRow;
 
             tbEditSystem.Text        = RowToEdit.SystemName;
-            tbEditStation.Text       = RowToEdit.StationID;
+            tbEditStation.Text       = RowToEdit.StationFullName;
             cbEditCommodityName.Text = RowToEdit.CommodityName;
             nEditSell.Value          = RowToEdit.SellPrice;
             nEditBuy.Value           = RowToEdit.BuyPrice;
             nEditDemand.Value        = RowToEdit.Demand;
-            nEditSupply.Value        = RowToEdit.Stock;
+            nEditSupply.Value        = RowToEdit.Supply;
             tbEditDemandLevel.Text   = RowToEdit.DemandLevel.Display();
             tbEditSupplyLevel.Text   = RowToEdit.SupplyLevel.Display();
             dtpEditSampleDate.Value  = RowToEdit.SampleDate;
@@ -44,7 +44,7 @@ namespace RegulatedNoise
                 SellPrice = (int)nEditSell.Value,
                 BuyPrice = (int)nEditBuy.Value,
                 Demand = (int)nEditDemand.Value,
-                Stock = (int)nEditSupply.Value,
+                Supply = (int)nEditSupply.Value,
                 DemandLevel = tbEditDemandLevel.Text.ToProposalLevel(),
                 SupplyLevel = tbEditSupplyLevel.Text.ToProposalLevel(),
                 SampleDate = dtpEditSampleDate.Value,

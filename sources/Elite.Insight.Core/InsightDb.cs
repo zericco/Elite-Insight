@@ -12,13 +12,13 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SQLite;
-using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Windows.Markup;
+using System.Runtime.InteropServices.ComTypes;
 using Elite.Insight.Core.DomainModel;
+using Elite.Insight.Core.Helpers;
+using Elite.Insight.Core.Messaging;
 using Newtonsoft.Json;
 
 namespace Elite.Insight.Core
@@ -28,9 +28,9 @@ namespace Elite.Insight.Core
 		private readonly string _dbFilepath;
 		private const string DEFAULT_DB_PATH = "elite-insight.db";
 
-		private Lazy<Cache<long>> _stationNameToIdCache;
-		private Lazy<Cache<long>> _systemNameToIdCache;
-		private Lazy<Cache<long>> _commodityNameToIdCache;
+		private readonly Lazy<Cache<long>> _stationNameToIdCache;
+		private readonly Lazy<Cache<long>> _systemNameToIdCache;
+		private readonly Lazy<Cache<long>> _commodityNameToIdCache;
 
 		public InsightDb(string filepath)
 		{
@@ -44,8 +44,6 @@ namespace Elite.Insight.Core
 			: this(DEFAULT_DB_PATH)
 		{
 		}
-
-		private const string NULL_VALUE = "NULL";
 
 		public string DbFilepath
 		{
@@ -71,9 +69,220 @@ namespace Elite.Insight.Core
 				CreateIdTable(cx);
 				CreateSystemsTable(cx);
 				CreateStationsTable(cx);
-				CreateComoditiesTable(cx);
+				CreateCommoditiesTable(cx);
 				CreateMarketDataTable(cx);
 			}
+		}
+
+		public void LoadModel(DataModel model, int daysInPast = 2)
+		{
+			int eventId = EventBus.Start("loading data model");
+			using (var cx = NewConnection())
+			{
+				using (var cmd = cx.CreateCommand())
+				{
+					cmd.CommandText = "create temp table perimeter as select * from marketdata where lastupdate > @lastUpdate";
+					cmd.AddParameter("@lastUpdate", DateTime.Today.AddDays(-daysInPast));
+					cmd.ExecuteNonQuery();
+				}
+				LoadCommodities(model.Commodities, cx);
+				LoadStarMap(model.StarMap, cx);
+				LoadMarketData(model.GalacticMarket, model.Commodities, model.StarMap, cx);
+			}
+			EventBus.Completed("data model loaded", eventId);
+		}
+
+		private void LoadMarketData(GalacticMarket galacticMarket, Commodities commodities, StarMap starmap, SQLiteConnection cx)
+		{
+			int eventId = EventBus.Start("loading market data");
+			cx.Read("select * from perimeter", record => galacticMarket.Import(LoadMarketData(record, commodities, starmap)));
+			EventBus.Completed("market data loaded", eventId);
+		}
+
+		private MarketDataRow LoadMarketData(IDataRecord record, Commodities commodities, StarMap starmap)
+		{
+			long commodityId = record.ReadInt64("commodityId");
+			long stationId = record.ReadInt64("stationId");
+			var commodity = commodities.First(c => c.Id == commodityId);
+			var station = starmap.Stations.First(s => s.Id == stationId);
+			return new MarketDataRow()
+			{
+				CommodityId = commodityId
+				,CommodityName = commodity.Name
+				,BuyPrice = record.ReadInt32("buyPrice", -1)
+				,SellPrice = record.ReadInt32("sellPrice", -1)
+				,Demand = record.ReadInt32("demand", 0)
+				,DemandLevel = record.ReadEnum<ProposalLevel>("demandLevel", null)
+				,Supply = record.ReadInt32("supply", 0)
+				,SupplyLevel = record.ReadEnum<ProposalLevel>("supplyLevel", null)
+				,SampleDate = record.ReadDate("lastUpdate", DateTime.MinValue)
+				,StationId = stationId
+				,StationName = station.Name
+			};
+		}
+
+		private void LoadStarMap(StarMap starMap, SQLiteConnection cx)
+		{
+			int eventId = EventBus.Start("loading star map");
+			var systemIds = new Dictionary<long, bool>();
+			cx.Read(@"select 
+										sy.id AS systemId
+										,sy.name AS systemName
+										,x
+										,y
+										,z
+										,population
+										,sy.faction AS systemFaction
+										,sy.government AS systemGovernment
+										,sy.allegiance AS systemAllegiance
+										,sy.state AS systemState
+										,security
+										,primaryEconomy
+										,needsPermit
+										,sy.lastUpdate AS systemLastUpdate
+										,st.id
+										,st.name
+										,landingPadSize
+										,distanceToStar
+										,st.faction
+										,st.government
+										,st.allegiance
+										,st.state
+										,type
+										,hasBlackmarket
+										,hasCommodities
+										,hasRefuel
+										,hasRepair
+										,hasRearm
+										,hasOutfitting
+										,hasShipyard
+										,availableShips
+										,importCommodities
+										,exportCommodities
+										,prohibitedCommodities
+										,economies
+										,st.lastUpdate
+					from systems sy inner join stations st on sy.id = st.systemId inner join perimeter md on md.stationId = st.id",
+				record =>
+				{
+					long systemId = record.ReadInt64("systemId");
+					if (!systemIds.ContainsKey(systemId))
+					{
+						starMap.Update(LoadSystem(record));
+						systemIds.Add(systemId, true);
+					}
+					starMap.Update(LoadStation(record));
+				});
+			EventBus.Completed("star map loaded", eventId);
+		}
+
+		private void LoadCommodities(Commodities commodities, SQLiteConnection cx)
+		{
+			int eventId = EventBus.Start("loading commodities");
+			cx.Read("select id, name, category from commodities", record => commodities.Add(LoadCommodity(record)));
+			cx.Read(@"select commodityId, min(buyprice) low, max(buyprice) high from marketdata
+								where buyprice >= 0 and demand >0
+								group by commodityId", record => UpdateCommodityBuyDemandStats(commodities, record));
+			cx.Read(@"select commodityId, min(buyprice) low, max(buyprice) high from marketdata
+								where buyprice >= 0 and supply >0
+								group by commodityId", record => UpdateCommodityBuySupplyStats(commodities, record));
+			cx.Read(@"select commodityId, min(sellprice) low, max(sellprice) high from marketdata
+								where buyprice >= 0 and demand >0
+								group by commodityId", record => UpdateCommoditySellDemandStats(commodities, record));
+			cx.Read(@"select commodityId, min(sellprice) low, max(sellprice) high from marketdata
+								where buyprice >= 0 and supply >0
+								group by commodityId", record => UpdateCommoditySellSupplyStats(commodities, record));
+			EventBus.Completed("commodities loaded", eventId);
+		}
+
+		private void UpdateCommodityBuyDemandStats(Commodities commodities, IDataRecord record)
+		{
+			var comodity = commodities.First(c => c.Id == record.ReadInt64("commodityId"));
+			comodity.DemandWarningLevels.Buy.Low = (int)record.ReadInt64("low");
+			comodity.DemandWarningLevels.Buy.High = (int)record.ReadInt64("high");
+		}
+
+		private void UpdateCommodityBuySupplyStats(Commodities commodities, IDataRecord record)
+		{
+			var comodity = commodities.First(c => c.Id == record.ReadInt64("commodityId"));
+			comodity.SupplyWarningLevels.Buy.Low = (int)record.ReadInt64("low");
+			comodity.SupplyWarningLevels.Buy.High = (int)record.ReadInt64("high");
+		}
+
+		private void UpdateCommoditySellDemandStats(Commodities commodities, IDataRecord record)
+		{
+			var comodity = commodities.First(c => c.Id == record.ReadInt64("commodityId"));
+			comodity.DemandWarningLevels.Sell.Low = (int)record.ReadInt64("low");
+			comodity.DemandWarningLevels.Sell.High = (int)record.ReadInt64("high");
+		}
+
+		private void UpdateCommoditySellSupplyStats(Commodities commodities, IDataRecord record)
+		{
+			var comodity = commodities.First(c => c.Id == record.ReadInt64("commodityId"));
+			comodity.SupplyWarningLevels.Sell.Low = (int)record.ReadInt64("low");
+			comodity.SupplyWarningLevels.Sell.High = (int)record.ReadInt64("high");
+		}
+
+		private Commodity LoadCommodity(IDataRecord record)
+		{
+			return new Commodity(record.ReadString("name"))
+			{
+				Id = record.ReadInt64("id")
+				,
+				Category = record.ReadString("category")
+			};
+		}
+
+		private Station LoadStation(IDataRecord record)
+		{
+			return new Station(record.ReadString("name"))
+			{
+				Id = record.ReadInt64("id"),
+				Faction = record.ReadString("faction"),
+				Allegiance = record.ReadString("allegiance"),
+				Government = record.ReadString("government"),
+				//Source = record.ReadString("source"),
+				State = record.ReadString("state"),
+				DistanceToStar = record.ReadInt32("distanceToStar"),
+				AvailableShips = record.ReadJson("availableShips", new string[0]),
+				Economies = record.ReadJson("economies", new string[0]),
+				ExportCommodities = record.ReadJson("exportCommodities", new string[0]),
+				HasRearm = record.ReadBoolean("hasRearm"),
+				HasBlackmarket = record.ReadBoolean("hasBlackmarket"),
+				HasOutfitting = record.ReadBoolean("hasOutfitting"),
+				HasCommodities = record.ReadBoolean("hasCommodities"),
+				HasRefuel = record.ReadBoolean("hasRefuel"),
+				HasRepair = record.ReadBoolean("hasRepair"),
+				HasShipyard = record.ReadBoolean("hasShipyard"),
+				ImportCommodities = record.ReadJson("importCommodities", new string[0]),
+				MaxLandingPadSize = record.ReadEnum<LandingPadSize>("landingPadSize", null),
+				ProhibitedCommodities = record.ReadJson("prohibitedCommodities", new string[0]),
+				Type = record.ReadString("type"),
+				SystemId = record.ReadInt64("systemId"),
+				SystemName = record.ReadString("systemName"),
+				UpdatedAt = record.ReadInt64("lastUpdate")
+			};
+		}
+
+		private StarSystem LoadSystem(IDataRecord record)
+		{
+			return new StarSystem(record.ReadString("systemName"))
+			{
+				Id = record.ReadInt64("systemId"),
+				Faction = record.ReadString("systemFaction"),
+				Allegiance = record.ReadString("systemAllegiance"),
+				Government = record.ReadString("systemGovernment"),
+				NeedsPermit = record.ReadBoolean("needsPermit"),
+				Population = record.ReadInt64("population", null),
+				PrimaryEconomy = record.ReadString("primaryEconomy"),
+				Security = record.ReadString("security"),
+				//Source = record.ReadString("source"),
+				State = record.ReadString("systemState"),
+				UpdatedAt = record.ReadInt64("systemLastUpdate"),
+				X = record.ReadDouble("x").Value,
+				Y = record.ReadDouble("y").Value,
+				Z = record.ReadDouble("z").Value
+			};
 		}
 
 		public long GetNextId(int count = 1)
@@ -125,19 +334,19 @@ namespace Elite.Insight.Core
 													,lastUpdate)
 												VALUES ("
 												+ starSystem.Id + ","
-												+ ToParameter(starSystem.Name) + ","
-												+ ToParameter(starSystem.X) + ","
-												+ ToParameter(starSystem.Y) + ","
-												+ ToParameter(starSystem.Z) + ","
-												+ ToParameter(starSystem.Population) + ","
-												+ ToParameter(starSystem.Faction) + ","
-												+ ToParameter(starSystem.Government) + ","
-												+ ToParameter(starSystem.Allegiance) + ","
-												+ ToParameter(starSystem.State) + ","
-												+ ToParameter(starSystem.Security) + ","
-												+ ToParameter(starSystem.PrimaryEconomy) + ","
-												+ ToParameter(starSystem.NeedsPermit) + ","
-												+ ToParameter(starSystem.UpdatedAt)
+												+ DbExtension.ToParameter(starSystem.Name) + ","
+												+ DbExtension.ToParameter(starSystem.X) + ","
+												+ DbExtension.ToParameter(starSystem.Y) + ","
+												+ DbExtension.ToParameter(starSystem.Z) + ","
+												+ DbExtension.ToParameter(starSystem.Population) + ","
+												+ DbExtension.ToParameter(starSystem.Faction) + ","
+												+ DbExtension.ToParameter(starSystem.Government) + ","
+												+ DbExtension.ToParameter(starSystem.Allegiance) + ","
+												+ DbExtension.ToParameter(starSystem.State) + ","
+												+ DbExtension.ToParameter(starSystem.Security) + ","
+												+ DbExtension.ToParameter(starSystem.PrimaryEconomy) + ","
+												+ DbExtension.ToParameter(starSystem.NeedsPermit) + ","
+												+ DbExtension.ToParameter(starSystem.UpdatedAt)
 												+ ")";
 						cmd.ExecuteNonQuery();
 					}
@@ -177,9 +386,9 @@ namespace Elite.Insight.Core
 													,lastUpdate)
 												VALUES ("
 												+ commodity.Id + ","
-												+ ToParameter(commodity.Name) + ","
-												+ ToParameter(commodity.Category) + ","
-												+ ToParameter(DateTime.Now)
+												+ DbExtension.ToParameter(commodity.Name) + ","
+												+ DbExtension.ToParameter(commodity.Category) + ","
+												+ DbExtension.ToParameter(DateTime.Now)
 												+ ")";
 						cmd.ExecuteNonQuery();
 					}
@@ -210,7 +419,7 @@ namespace Elite.Insight.Core
 		{
 			using (var cx = NewConnection())
 			{
-				long systemId = ToSystemId(station.System);
+				long systemId = ToSystemId(station.SystemName);
 				using (var cmd = cx.CreateCommand())
 				{
 					try
@@ -233,28 +442,28 @@ namespace Elite.Insight.Core
 													,lastUpdate)
 												VALUES ("
 												+ station.Id + ","
-												+ ToParameter(station.Name) + ","
-												+ ToParameter(systemId) + ","
-												+ ToParameter(station.MaxLandingPadSize) + ","
-												+ ToParameter(station.DistanceToStar) + ","
-												+ ToParameter(station.Faction) + ","
-												+ ToParameter(station.Government) + ","
-												+ ToParameter(station.Allegiance) + ","
-												+ ToParameter(station.State) + ","
-												+ ToParameter(station.Type) + ","
-												+ ToParameter(station.HasBlackmarket) + ","
-												+ ToParameter(station.HasCommodities) + ","
-												+ ToParameter(station.HasRefuel) + ","
-												+ ToParameter(station.HasRepair) + ","
-												+ ToParameter(station.HasRearm) + ","
-												+ ToParameter(station.HasOutfitting) + ","
-												+ ToParameter(station.HasShipyard) + ","
-												+ ToParameter(station.AvailableShips) + ","
-												+ ToParameter(station.ImportCommodities) + ","
-												+ ToParameter(station.ExportCommodities) + ","
-												+ ToParameter(station.ProhibitedCommodities) + ","
-												+ ToParameter(station.Economies) + ","
-												+ ToParameter(station.UpdatedAt)
+												+ DbExtension.ToParameter(station.Name) + ","
+												+ DbExtension.ToParameter(systemId) + ","
+												+ DbExtension.ToParameter(station.MaxLandingPadSize) + ","
+												+ DbExtension.ToParameter(station.DistanceToStar) + ","
+												+ DbExtension.ToParameter(station.Faction) + ","
+												+ DbExtension.ToParameter(station.Government) + ","
+												+ DbExtension.ToParameter(station.Allegiance) + ","
+												+ DbExtension.ToParameter(station.State) + ","
+												+ DbExtension.ToParameter(station.Type) + ","
+												+ DbExtension.ToParameter(station.HasBlackmarket) + ","
+												+ DbExtension.ToParameter(station.HasCommodities) + ","
+												+ DbExtension.ToParameter(station.HasRefuel) + ","
+												+ DbExtension.ToParameter(station.HasRepair) + ","
+												+ DbExtension.ToParameter(station.HasRearm) + ","
+												+ DbExtension.ToParameter(station.HasOutfitting) + ","
+												+ DbExtension.ToParameter(station.HasShipyard) + ","
+												+ DbExtension.ToParameter(station.AvailableShips) + ","
+												+ DbExtension.ToParameter(station.ImportCommodities) + ","
+												+ DbExtension.ToParameter(station.ExportCommodities) + ","
+												+ DbExtension.ToParameter(station.ProhibitedCommodities) + ","
+												+ DbExtension.ToParameter(station.Economies) + ","
+												+ DbExtension.ToParameter(station.UpdatedAt)
 												+ ")";
 						cmd.ExecuteNonQuery();
 					}
@@ -298,15 +507,15 @@ namespace Elite.Insight.Core
 													,supply
 													,supplyLevel
 													,lastUpdate) VALUES ("
-												+ ToParameter(commodityId) + ","
-												+ ToParameter(stationId) + ","
-												+ ToParameter(marketData.BuyPrice) + ","
-												+ ToParameter(marketData.SellPrice) + ","
-												+ ToParameter(marketData.Demand) + ","
-												+ ToParameter(marketData.DemandLevel) + ","
-												+ ToParameter(marketData.Stock) + ","
-												+ ToParameter(marketData.SupplyLevel) + ","
-												+ ToParameter(marketData.SampleDate)
+												+ DbExtension.ToParameter(commodityId) + ","
+												+ DbExtension.ToParameter(stationId) + ","
+												+ DbExtension.ToParameter(marketData.BuyPrice) + ","
+												+ DbExtension.ToParameter(marketData.SellPrice) + ","
+												+ DbExtension.ToParameter(marketData.Demand) + ","
+												+ DbExtension.ToParameter(marketData.DemandLevel) + ","
+												+ DbExtension.ToParameter(marketData.Supply) + ","
+												+ DbExtension.ToParameter(marketData.SupplyLevel) + ","
+												+ DbExtension.ToParameter(marketData.SampleDate)
 												+ ")";
 						cmd.ExecuteNonQuery();
 					}
@@ -337,76 +546,6 @@ namespace Elite.Insight.Core
 			}
 		}
 
-		private static string ToParameter(DateTime dateTime)
-		{
-			return "strftime('%s','" + dateTime.ToUniversalTime().ToString("u") + "')";
-		}
-
-		private static string ToParameter(double value)
-		{
-			return value.ToString(CultureInfo.InvariantCulture);
-		}
-
-		private static string ToParameter<TValue>(TValue? value) where TValue : struct
-		{
-			if (value.HasValue)
-				return ToParameter(value.Value);
-			else
-			{
-				return NULL_VALUE;
-			}
-		}
-
-		private static string ToParameter(string value)
-		{
-			if (value == null)
-				return NULL_VALUE;
-			else
-				return "'" + value.Replace("'", "''") + "'";
-		}
-
-		private static string ToParameter(object value)
-		{
-			if (value == null)
-			{
-				return NULL_VALUE;
-			}
-			else if (value is string)
-			{
-				return ToParameter((string)value);
-			}
-			else if (value is double)
-			{
-				return ((double)value).ToString(CultureInfo.InvariantCulture);
-			}
-			else if (value is DateTime)
-			{
-				return "strftime('%s','" + ((DateTime)value).ToUniversalTime().ToString("u") + "')";
-			}
-			else if (value is bool)
-			{
-				return ((bool)value) ? "1" : "0";
-			}
-			else if (value is IEnumerable)
-			{
-				bool empty = true;
-				foreach (object o in (IEnumerable)value)
-				{
-					empty = false;
-					break;
-				}
-				return empty ? NULL_VALUE : "'" + JsonConvert.SerializeObject(value).Replace("'","''") + "'";
-			}
-			else if (value.GetType().IsEnum)
-			{
-				return "'" + value + "'";
-			}
-			else
-			{
-				return value.ToString();
-			}
-		}
-
 		private long ToSystemId(string systemName)
 		{
 			return _systemNameToIdCache.Value[systemName];
@@ -429,7 +568,7 @@ namespace Elite.Insight.Core
 			{
 				throw new ArgumentException("unknown system: " + systemName);
 			}
-			long systemId = (long) result;
+			long systemId = (long)result;
 			return systemId;
 		}
 
@@ -441,7 +580,7 @@ namespace Elite.Insight.Core
 			{
 				throw new ArgumentException("unknown commodity: " + commodityName);
 			}
-			long commodityId = (long) result;
+			long commodityId = (long)result;
 			return commodityId;
 		}
 
@@ -452,7 +591,7 @@ namespace Elite.Insight.Core
 			{
 				throw new ArgumentException("unknown station: " + stationName);
 			}
-			long stationId = (long) result;
+			long stationId = (long)result;
 			return stationId;
 		}
 
@@ -493,6 +632,7 @@ namespace Elite.Insight.Core
 													,security TEXT
 													,primaryEconomy TEXT
 													,needsPermit INTEGER
+													,source TEXT
 													,lastUpdate INTEGER
 												);
 												CREATE UNIQUE INDEX IF NOT EXISTS system_name_idx ON systems(name ASC)";
@@ -523,11 +663,12 @@ namespace Elite.Insight.Core
 													,hasRearm INTEGER
 													,hasOutfitting INTEGER
 													,hasShipyard INTEGER
-													,AvailableShips TEXT
-													,ImportCommodities TEXT
-													,ExportCommodities TEXT
-													,ProhibitedCommodities TEXT
-													,Economies TEXT
+													,availableShips TEXT
+													,importCommodities TEXT
+													,exportCommodities TEXT
+													,prohibitedCommodities TEXT
+													,economies TEXT
+													,source TEXT
 													,lastUpdate INTEGER
 												);
 												CREATE UNIQUE INDEX IF NOT EXISTS station_name_idx ON stations(name ASC)";
@@ -535,7 +676,7 @@ namespace Elite.Insight.Core
 			}
 		}
 
-		private static void CreateComoditiesTable(SQLiteConnection cx)
+		private static void CreateCommoditiesTable(SQLiteConnection cx)
 		{
 			using (var cmd = cx.CreateCommand())
 			{
@@ -544,6 +685,7 @@ namespace Elite.Insight.Core
 													id INTEGER PRIMARY KEY
 													,name TEXT UNIQUE NOT NULL
 													,category TEXT
+													,source TEXT
 													,lastUpdate INTEGER
 												);
 												CREATE UNIQUE INDEX IF NOT EXISTS commodity_name_idx ON commodities(name)";
@@ -605,6 +747,468 @@ namespace Elite.Insight.Core
 					_dictionary.Add(key, value);
 				}
 				return value;
+			}
+		}
+	}
+
+	internal static class DbExtension
+	{
+		public const string NULL_VALUE = "NULL";
+
+		public static SQLiteParameter AddParameter(this SQLiteCommand cmd, string parameterName, DateTime value)
+		{
+			var parameter = cmd.CreateParameter();
+			parameter.ParameterName = parameterName;
+			parameter.Value = value.ToUniversalTime().ToUnixTimestamp();
+			cmd.Parameters.Add(parameter);
+			return parameter;
+		}
+
+		public static SQLiteParameter AddParameter(this SQLiteCommand cmd, string parameterName, string value)
+		{
+			var parameter = cmd.CreateParameter();
+			parameter.ParameterName = parameterName;
+			parameter.Value = value;
+			cmd.Parameters.Add(parameter);
+			return parameter;
+		}
+
+		public static SQLiteParameter AddParameter(this SQLiteCommand cmd, string parameterName, int value)
+		{
+			var parameter = cmd.CreateParameter();
+			parameter.ParameterName = parameterName;
+			parameter.Value = value;
+			cmd.Parameters.Add(parameter);
+			return parameter;
+		}
+
+		public static SQLiteParameter AddParameter(this SQLiteCommand cmd, string parameterName, double value)
+		{
+			var parameter = cmd.CreateParameter();
+			parameter.ParameterName = parameterName;
+			parameter.Value = value;
+			cmd.Parameters.Add(parameter);
+			return parameter;
+		}
+
+		public static void Read(this SQLiteConnection cx, string request, Action<IDataRecord> mapper)
+		{
+			using (var cmd = cx.CreateCommand())
+			{
+				Read(cmd, request, mapper);
+			}
+		}
+
+		public static void Read(this SQLiteCommand cmd, string request, Action<IDataRecord> mapper)
+		{
+			cmd.CommandText = request;
+			using (var reader = cmd.ExecuteReader())
+			{
+				while (reader.Read())
+				{
+					mapper(reader);
+				}
+			}
+		}
+
+		public static DateTime ReadDate(this IDataRecord record, string columnName, DateTime defaultValue)
+		{
+			return ReadDate(record, columnName) ?? defaultValue;
+		}
+
+		public static DateTime ReadDate(this IDataRecord record, int index, DateTime defaultValue)
+		{
+			return ReadDate(record, index) ?? defaultValue;
+		}
+
+		public static DateTime? ReadDate(this IDataRecord record, string columnName, DateTime? defaultValue = null)
+		{
+			try
+			{
+				return ReadDate(record, record.GetOrdinal(columnName), defaultValue);
+			}
+			catch (IndexOutOfRangeException ex)
+			{
+				throw new DataException("unknown column " + columnName, ex);
+			}
+			catch (DataException ex)
+			{
+				throw new DataException("error occured when reading column " + columnName, ex);
+			}
+		}
+
+		public static DateTime? ReadDate(this IDataRecord record, int index, DateTime? defaultValue = null)
+		{
+			try
+			{
+				if (record.IsDBNull(index))
+				{
+					return defaultValue;
+				}
+				else
+				{
+					return UnixTimeStamp.ToDateTime(record.GetInt64(index));
+				}
+			}
+			catch (Exception ex)
+			{
+				throw new DataException("error occured when reading column #" + index, ex);
+			}
+		}
+
+		public static string ReadString(this IDataRecord record, string columnName, string defaultValue = null)
+		{
+			try
+			{
+				return ReadString(record, record.GetOrdinal(columnName), defaultValue);
+			}
+			catch (IndexOutOfRangeException ex)
+			{
+				throw new DataException("unknown column " + columnName, ex);
+			}
+			catch (DataException ex)
+			{
+				throw new DataException("error occured when reading column " + columnName, ex);
+			}
+		}
+
+		public static string ReadString(this IDataRecord record, int index, string defaultValue)
+		{
+			try
+			{
+				if (record.IsDBNull(index))
+				{
+					return defaultValue;
+				}
+				else
+				{
+					return record.GetString(index);
+				}
+			}
+			catch (Exception ex)
+			{
+				throw new DataException("error occured when reading column #" + index, ex);
+			}
+		}
+
+		public static int? ReadInt32(this IDataRecord record, string columnName, int? defaultValue = null)
+		{
+			try
+			{
+				return ReadInt32(record, record.GetOrdinal(columnName), defaultValue);
+			}
+			catch (IndexOutOfRangeException ex)
+			{
+				throw new DataException("unknown column " + columnName, ex);
+			}
+			catch (DataException ex)
+			{
+				throw new DataException("error occured when reading column " + columnName, ex);
+			}
+		}
+
+		public static int? ReadInt32(this IDataRecord record, int index, int? defaultValue = null)
+		{
+			try
+			{
+				if (record.IsDBNull(index))
+				{
+					return defaultValue;
+				}
+				else
+				{
+					return record.GetInt32(index);
+				}
+			}
+			catch (Exception ex)
+			{
+				throw new DataException("error occured when reading column #" + index, ex);
+			}
+		}
+
+		public static int ReadInt32(this IDataRecord record, string columnName, int defaultValue)
+		{
+			return ReadInt32(record, columnName) ?? defaultValue;
+		}
+
+		public static int ReadInt32(this IDataRecord record, int index, int defaultValue)
+		{
+			return ReadInt32(record, index) ?? defaultValue;
+
+		}
+
+		public static long? ReadInt64(this IDataRecord record, string columnName, long? defaultValue)
+		{
+			try
+			{
+				return ReadInt64(record, record.GetOrdinal(columnName), defaultValue);
+			}
+			catch (IndexOutOfRangeException ex)
+			{
+				throw new DataException("unknown column " + columnName, ex);
+			}
+			catch (DataException ex)
+			{
+				throw new DataException("error occured when reading column " + columnName, ex);
+			}
+		}
+
+		public static long? ReadInt64(this IDataRecord record, int index, long? defaultValue)
+		{
+			try
+			{
+				if (record.IsDBNull(index))
+				{
+					return defaultValue;
+				}
+				else
+				{
+					return record.GetInt64(index);
+				}
+			}
+			catch (Exception ex)
+			{
+				throw new DataException("error occured when reading column #" + index, ex);
+			}
+		}
+
+		public static long ReadInt64(this IDataRecord record, string columnName, long defaultValue)
+		{
+			return ReadInt64(record, columnName, null) ?? defaultValue;
+
+		}
+
+		public static long ReadInt64(this IDataRecord record, int index, long defaultValue)
+		{
+			return ReadInt64(record, index, null) ?? defaultValue;
+
+		}
+
+		public static long ReadInt64(this IDataRecord record, string columnName)
+		{
+			long? readInt64 = ReadInt64(record, columnName, null);
+			if (!readInt64.HasValue)
+				throw new MissingDataException("field " + columnName + " is not set");
+			return readInt64.Value;
+		}
+
+		public static long ReadInt64(this IDataRecord record, int index)
+		{
+			long? readInt64 = ReadInt64(record, index, null);
+			if (!readInt64.HasValue)
+				throw new MissingDataException("field #" + index + " is not set");
+			return readInt64.Value;
+		}
+
+		public static bool? ReadBoolean(this IDataRecord record, string columnName, bool? defaultValue = null)
+		{
+			try
+			{
+				return ReadBoolean(record, record.GetOrdinal(columnName), defaultValue);
+			}
+			catch (IndexOutOfRangeException ex)
+			{
+				throw new DataException("unknown column " + columnName, ex);
+			}
+			catch (DataException ex)
+			{
+				throw new DataException("error occured when reading column " + columnName, ex);
+			}
+		}
+
+		public static bool? ReadBoolean(this IDataRecord record, int index, bool? defaultValue = null)
+		{
+			try
+			{
+				if (record.IsDBNull(index))
+				{
+					return defaultValue;
+				}
+				else
+				{
+					return record.GetBoolean(index);
+				}
+			}
+			catch (Exception ex)
+			{
+				throw new DataException("error occured when reading column #" + index, ex);
+			}
+		}
+
+		public static bool ReadBoolean(this IDataRecord record, string columnName, bool defaultValue)
+		{
+			return ReadBoolean(record, columnName) ?? defaultValue;
+
+		}
+
+		public static bool ReadBoolean(this IDataRecord record, int index, bool defaultValue)
+		{
+			return ReadBoolean(record, index) ?? defaultValue;
+
+		}
+
+		public static double? ReadDouble(this IDataRecord record, string columnName, double? defaultValue = null)
+		{
+			try
+			{
+				return ReadDouble(record, record.GetOrdinal(columnName), defaultValue);
+			}
+			catch (IndexOutOfRangeException ex)
+			{
+				throw new DataException("unknown column " + columnName, ex);
+			}
+			catch (DataException ex)
+			{
+				throw new DataException("error occured when reading column " + columnName, ex);
+			}
+		}
+
+		public static double? ReadDouble(this IDataRecord record, int index, double? defaultValue = null)
+		{
+			try
+			{
+				if (record.IsDBNull(index))
+				{
+					return defaultValue;
+				}
+				else
+				{
+					return record.GetDouble(index);
+				}
+			}
+			catch (Exception ex)
+			{
+				throw new DataException("error occured when reading column #" + index, ex);
+			}
+		}
+
+		public static double ReadDouble(this IDataRecord record, string columnName, double defaultValue)
+		{
+			return ReadDouble(record, columnName) ?? defaultValue;
+		}
+
+		public static double ReadDouble(this IDataRecord record, int index, double defaultValue)
+		{
+			return ReadDouble(record, index) ?? defaultValue;
+		}
+
+		public static TEnum? ReadEnum<TEnum>(this IDataRecord record, string columnName, TEnum? defaultValue)
+			where TEnum : struct
+		{
+			try
+			{
+				return ReadEnum(record, record.GetOrdinal(columnName), defaultValue);
+			}
+			catch (IndexOutOfRangeException ex)
+			{
+				throw new DataException("unknown column " + columnName, ex);
+			}
+			catch (DataException ex)
+			{
+				throw new DataException("error occured when reading column " + columnName, ex);
+			}			
+		}
+
+		public static TEnum? ReadEnum<TEnum>(this IDataRecord record, int index, TEnum? defaultValue)
+			where TEnum:struct
+		{
+			try
+			{
+				if (record.IsDBNull(index))
+				{
+					return defaultValue;
+				}
+				else
+				{
+					return (TEnum)Enum.Parse(typeof (TEnum), record.GetString(index));
+				}
+			}
+			catch (Exception ex)
+			{
+				throw new DataException("error occured when reading column #" + index, ex);
+			}			
+		}
+
+		public static TValue ReadJson<TValue>(this IDataRecord record, string columnName, TValue defaultValue)
+		{
+			string value = record.ReadString(columnName);
+			if (value == null)
+			{
+				return defaultValue;
+			}
+			else
+			{
+				return JsonConvert.DeserializeObject<TValue>(value);
+			}
+		}
+
+		public static string ToParameter(DateTime dateTime)
+		{
+			return "strftime('%s','" + dateTime.ToUniversalTime().ToString("u") + "')";
+		}
+
+		public static string ToParameter(double value)
+		{
+			return value.ToString(CultureInfo.InvariantCulture);
+		}
+
+		public static string ToParameter<TValue>(TValue? value) where TValue : struct
+		{
+			if (value.HasValue)
+				return ToParameter(value.Value);
+			else
+			{
+				return NULL_VALUE;
+			}
+		}
+
+		public static string ToParameter(string value)
+		{
+			if (value == null)
+				return NULL_VALUE;
+			else
+				return "'" + value.Replace("'", "''") + "'";
+		}
+
+		public static string ToParameter(object value)
+		{
+			if (value == null)
+			{
+				return NULL_VALUE;
+			}
+			else if (value is string)
+			{
+				return ToParameter((string)value);
+			}
+			else if (value is double)
+			{
+				return ((double)value).ToString(CultureInfo.InvariantCulture);
+			}
+			else if (value is DateTime)
+			{
+				return "strftime('%s','" + ((DateTime)value).ToUniversalTime().ToString("u") + "')";
+			}
+			else if (value is bool)
+			{
+				return ((bool)value) ? "1" : "0";
+			}
+			else if (value is IEnumerable)
+			{
+				bool empty = true;
+				foreach (object o in (IEnumerable)value)
+				{
+					empty = false;
+					break;
+				}
+				return empty ? NULL_VALUE : "'" + JsonConvert.SerializeObject(value).Replace("'", "''") + "'";
+			}
+			else if (value.GetType().IsEnum)
+			{
+				return "'" + value + "'";
+			}
+			else
+			{
+				return value.ToString();
 			}
 		}
 	}

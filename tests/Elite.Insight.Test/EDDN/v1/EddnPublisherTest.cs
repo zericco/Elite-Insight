@@ -23,7 +23,7 @@ namespace Elite.Insight.Test.EDDN.v1
 			using (var publisher = new EddnPublisher())
 			{
 				publisher.TestMode = true;
-				publisher.Publish(new MarketDataRow() { CommodityName = "aCommodity", BuyPrice = 1234, Demand = 2345, SellPrice = 5325, StationName = "aStation", Stock = 53535, SystemName = "aSystem", DemandLevel = ProposalLevel.Low, SupplyLevel = ProposalLevel.High, SampleDate = DateTime.Today});
+				publisher.Publish(new MarketDataRow() { CommodityName = "aCommodity", BuyPrice = 1234, Demand = 2345, SellPrice = 5325, StationName = "aStation", Supply = 53535, SystemName = "aSystem", DemandLevel = ProposalLevel.Low, SupplyLevel = ProposalLevel.High, SampleDate = DateTime.Today});
 			}
 		}
 		 

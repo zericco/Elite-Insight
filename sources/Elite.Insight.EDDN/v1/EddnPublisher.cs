@@ -44,7 +44,7 @@ namespace Elite.Insight.EDDN.v1
 					,DemandLevel = commodityData.DemandLevel
 					,SellPrice = commodityData.SellPrice
 					,StationName = commodityData.StationName
-					,Supply = commodityData.Stock
+					,Supply = commodityData.Supply
 					,SupplyLevel = commodityData.SupplyLevel
 					,SystemName = commodityData.SystemName
 					,Timestamp = commodityData.SampleDate.ToUniversalTime()

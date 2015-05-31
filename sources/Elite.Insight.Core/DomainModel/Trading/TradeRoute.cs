@@ -38,14 +38,14 @@ namespace Elite.Insight.Core.DomainModel.Trading
             if (String.Compare(origin.CommodityName, destination.CommodityName, StringComparison.InvariantCultureIgnoreCase) != 0)
                 throw new ArgumentException("marketdata commodities must match");
             CommodityName = origin.CommodityName;
-            OriginStationId = origin.StationID;
-            TargetStationId = destination.StationID;
+            OriginStationId = origin.StationFullName;
+            TargetStationId = destination.StationFullName;
             Age = origin.SampleDate < destination.SampleDate ? origin.SampleDate : destination.SampleDate;
             Profit = destination.SellPrice - origin.BuyPrice;
             Distance = distance;
-            Stock = origin.Stock;
+            Stock = origin.Supply;
             BuyPrice = origin.BuyPrice;
-            Supply = origin.Stock;
+            Supply = origin.Supply;
             SupplyLevel = origin.SupplyLevel;
             Demand = destination.Demand;
             DemandLevel = destination.DemandLevel;

@@ -58,7 +58,7 @@ namespace Elite.Insight.Core.DomainModel
 		public bool? NeedsPermit { get; set; }
 
 		[JsonProperty("updated_at")]
-		public int UpdatedAt { get; set; }
+		public long UpdatedAt { get; set; }
 
 		public IEnumerable<Station> Stations { get { return _stations; } }
 
@@ -133,7 +133,7 @@ namespace Elite.Insight.Core.DomainModel
 		public void UpdateStations([NotNull] Station station)
 		{
 			if (station == null) throw new ArgumentNullException("station");
-			if (!station.System.Equals(Name, StringComparison.InvariantCultureIgnoreCase)) throw new ArgumentException("station system " + station.System + " does not match system " + Name, "station");
+			if (!station.SystemName.Equals(Name, StringComparison.InvariantCultureIgnoreCase)) throw new ArgumentException("station system " + station.SystemName + " does not match system " + Name, "station");
 			_stations.UpdateFrom(station);
 		}
 

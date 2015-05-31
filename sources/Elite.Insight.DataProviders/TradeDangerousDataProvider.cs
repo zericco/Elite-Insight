@@ -14,6 +14,7 @@ namespace Elite.Insight.DataProviders
 	{
 		public const string SOURCENAME = "TRADE_DANGEROUS";
 		private const string PRICES_3H_URL = "http://www.davek.com.au/td/prices-3h.asp";
+		private const string PRICES_2D_URL = "http://www.davek.com.au/td/prices-2d.asp";
 		private const string SYSTEMS_URL = "http://www.davek.com.au/td/System.csv";
 		private const string STATIONS_URL = "http://www.davek.com.au/td/station.asp";
 		private const string SHIP_VENDORS_URL = "http://www.davek.com.au/td/shipvendor.asp";
@@ -34,6 +35,13 @@ namespace Elite.Insight.DataProviders
 		{
 			PriceParser parser = new PriceParser();
 			await RetrieveData(PRICES_3H_URL, line => parser.Parse(line));
+			return parser.MarketDatas;
+		}
+
+		public async Task<IReadOnlyCollection<MarketDataRow>> RetrievePricesTwoDaysAgo()
+		{
+			PriceParser parser = new PriceParser();
+			await RetrieveData(PRICES_2D_URL, line => parser.Parse(line));
 			return parser.MarketDatas;
 		}
 
@@ -127,7 +135,7 @@ namespace Elite.Insight.DataProviders
 						currentRow.DemandLevel = ParseProposalLevel(demandLevel.Value);
 					Group stock = match.Groups["stock"];
 					if (stock.Success && !String.IsNullOrWhiteSpace(stock.Value))
-						currentRow.Stock = Int32.Parse(stock.Value);
+						currentRow.Supply = Int32.Parse(stock.Value);
 					Group supplyLevel = match.Groups["supplylevel"];
 					if (supplyLevel.Success)
 						currentRow.SupplyLevel = ParseProposalLevel(supplyLevel.Value);

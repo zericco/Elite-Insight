@@ -210,16 +210,6 @@ namespace RegulatedNoise
 
 				_logger.Log("Initialisation complete");
 
-				if (_settings.TestMode)
-				{
-					//Testing
-					var testtab = new TabPage("MRmP Test Tab");
-					var testtb = new MRmPTestTab.MRmPTestTab { Dock = DockStyle.Fill };
-					testtab.Controls.Add(testtb);
-					tabCtrlMain.Controls.Add(testtab);
-				}
-
-
 				// two methods with the same functionality 
 				// maybe this was the better way but I've already improved the other 
 				// way (UpdateSystemNameFromLogFile()) 
@@ -939,7 +929,7 @@ namespace RegulatedNoise
 			{
 				if (updateStationVisitations)
 				{
-					_StationHistory.addVisit(marketData.StationID);
+					_StationHistory.addVisit(marketData.StationFullName);
 				}
 
 				if (GalacticMarket.Update(marketData) != Market.UpdateState.Discarded)
@@ -1510,7 +1500,7 @@ namespace RegulatedNoise
                             row.BuyPrice> 0 ? row.BuyPrice.ToString(CultureInfo.InvariantCulture) : "",
                             row.Demand > 0 ? row.Demand.ToString(CultureInfo.InvariantCulture) : "", 
                             row.DemandLevel.Display(),
-                            row.Stock > 0 ? row.Stock.ToString(CultureInfo.InvariantCulture) : "",
+                            row.Supply > 0 ? row.Supply.ToString(CultureInfo.InvariantCulture) : "",
                             row.SupplyLevel.Display(), 
                             bestBuy, 
                             bestSell,
@@ -1585,14 +1575,14 @@ namespace RegulatedNoise
 			bestSell = "";
 
 			var commodityMarket = GalacticMarket.CommodityMarket(commodityName).Where(x => IsInPerimeter(x, !_InitDone));
-			List<MarketDataRow> demandMarket = commodityMarket.Where(x => x.Stock > 0 && x.BuyPrice > 0).ToList();
+			List<MarketDataRow> demandMarket = commodityMarket.Where(x => x.Supply > 0 && x.BuyPrice > 0).ToList();
 			buyers = demandMarket.Count();
 
 			if (demandMarket.Any())
 			{
 				bestBuyPrice = demandMarket.Min(y => y.BuyPrice);
 				var bestBuyPriceCopy = bestBuyPrice;
-				bestBuy = string.Join(" ", demandMarket.Where(x => x.BuyPrice == bestBuyPriceCopy).Select(x => x.StationID + " (" + x.BuyPrice + ")"));
+				bestBuy = string.Join(" ", demandMarket.Where(x => x.BuyPrice == bestBuyPriceCopy).Select(x => x.StationFullName + " (" + x.BuyPrice + ")"));
 			}
 
 			var supplyMarket = commodityMarket.Where(x => x.SellPrice > 0 && x.Demand > 0).ToList();
@@ -1601,7 +1591,7 @@ namespace RegulatedNoise
 			{
 				bestSellPrice = supplyMarket.Max(y => y.SellPrice);
 				var bestSellPriceCopy = bestSellPrice;
-				bestSell = string.Join(" ", supplyMarket.Where(x => x.SellPrice == bestSellPriceCopy).Select(x => x.StationID + " (" + x.SellPrice + ")"));
+				bestSell = string.Join(" ", supplyMarket.Where(x => x.SellPrice == bestSellPriceCopy).Select(x => x.StationFullName + " (" + x.SellPrice + ")"));
 			}
 		}
 
@@ -1726,12 +1716,12 @@ namespace RegulatedNoise
 				{
 					double? distance = ApplicationContext.Model.StarMap.DistanceInLightYears(tbCurrentSystemFromLogs.Text, row.SystemName);
 					var viewItem = new ListViewItem(new string[] 
-					{   row.StationID,
+					{   row.StationFullName,
 						row.SellPrice > 0 ? row.SellPrice.ToString(CultureInfo.InvariantCulture) : "",
 						row.BuyPrice > 0 ? row.BuyPrice.ToString(CultureInfo.InvariantCulture) : "",
 						row.Demand > 0 ? row.Demand.ToString(CultureInfo.InvariantCulture) : "",
 						row.DemandLevel.Display(),
-						row.Stock > 0 ? row.Stock.ToString(CultureInfo.InvariantCulture) : "",
+						row.Supply > 0 ? row.Supply.ToString(CultureInfo.InvariantCulture) : "",
 						row.SupplyLevel.Display(), 
 						row.SampleDate.ToString(CultureInfo.CurrentCulture) 
 						,distance.HasValue ? Math.Round(distance.Value, 1).ToString(CultureInfo.CurrentCulture) : "N/A"
@@ -1742,7 +1732,7 @@ namespace RegulatedNoise
 				}
 				lbCommodities.EndUpdate();
 
-				var l = GalacticMarket.CommodityMarket(selectedCmbItem.ToString()).Where(x => x.BuyPrice > 0 && x.Stock > 0).Where(x => IsInPerimeter(x)).ToList();
+				var l = GalacticMarket.CommodityMarket(selectedCmbItem.ToString()).Where(x => x.BuyPrice > 0 && x.Supply > 0).Where(x => IsInPerimeter(x)).ToList();
 				if (l.Any())
 				{
 					lblMin.Text = l.Min(x => x.BuyPrice).ToString(CultureInfo.InvariantCulture);
@@ -1787,7 +1777,7 @@ namespace RegulatedNoise
 			{
 				var l = GalacticMarket.CommodityMarket(cbCommodity.SelectedItem.ToString()).Where(x => x.BuyPrice > 0).Where(x => IsInPerimeter(x)).ToList();
 				var m = l.Where(x => x.BuyPrice == l.Min(y => y.BuyPrice));
-				MsgBox.Show(string.Join(", ", m.Select(x => x.StationID)));
+				MsgBox.Show(string.Join(", ", m.Select(x => x.StationFullName)));
 			}
 		}
 
@@ -1797,7 +1787,7 @@ namespace RegulatedNoise
 			{
 				var l = GalacticMarket.CommodityMarket(cbCommodity.SelectedItem.ToString()).Where(x => x.SellPrice > 0).Where(x => IsInPerimeter(x)).ToList();
 				var m = l.Where(x => x.SellPrice == l.Min(y => y.SellPrice));
-				MsgBox.Show(string.Join(", ", m.Select(x => x.StationID)));
+				MsgBox.Show(string.Join(", ", m.Select(x => x.StationFullName)));
 			}
 		}
 
@@ -1807,7 +1797,7 @@ namespace RegulatedNoise
 			{
 				var l = GalacticMarket.CommodityMarket(cbCommodity.SelectedItem.ToString()).Where(x => x.BuyPrice > 0).Where(x => IsInPerimeter(x)).ToList();
 				var m = l.Where(x => x.BuyPrice == l.Max(y => y.BuyPrice));
-				MsgBox.Show(string.Join(", ", m.Select(x => x.StationID)));
+				MsgBox.Show(string.Join(", ", m.Select(x => x.StationFullName)));
 			}
 		}
 
@@ -1817,7 +1807,7 @@ namespace RegulatedNoise
 			{
 				var l = GalacticMarket.CommodityMarket(cbCommodity.SelectedItem.ToString()).Where(x => x.SellPrice > 0).Where(x => IsInPerimeter(x)).ToList();
 				var m = l.Where(x => x.SellPrice == l.Max(y => y.SellPrice));
-				MsgBox.Show(string.Join(", ", m.Select(x => x.StationID)));
+				MsgBox.Show(string.Join(", ", m.Select(x => x.StationFullName)));
 			}
 		}
 
@@ -1846,9 +1836,9 @@ namespace RegulatedNoise
 
 			chart1.Series.Add(series1);
 
-			foreach (var price in GalacticMarket.CommodityMarket(senderName).Where(x => x.BuyPrice > 0 && x.Stock > 0).Where(x => IsInPerimeter(x)).OrderBy(x => x.BuyPrice))
+			foreach (var price in GalacticMarket.CommodityMarket(senderName).Where(x => x.BuyPrice > 0 && x.Supply > 0).Where(x => IsInPerimeter(x)).OrderBy(x => x.BuyPrice))
 			{
-				series1.Points.AddXY(price.StationID, price.BuyPrice);
+				series1.Points.AddXY(price.StationFullName, price.BuyPrice);
 			}
 
 			chart1.Invalidate();
@@ -1870,7 +1860,7 @@ namespace RegulatedNoise
 
 			foreach (var price in GalacticMarket.CommodityMarket(senderName).Where(x => x.SellPrice > 0 && x.Demand > 0).Where(x => IsInPerimeter(x)).OrderByDescending(x => x.SellPrice))
 			{
-				series2.Points.AddXY(price.StationID, price.SellPrice);
+				series2.Points.AddXY(price.StationFullName, price.SellPrice);
 			}
 
 			chart2.Invalidate();
@@ -5011,7 +5001,7 @@ namespace RegulatedNoise
 					cmbStationStations.ReadOnly = false;
 				}
 
-				if (GetStations(m_loadedStationdata.System).Any(x => x.Source == EddbDataProvider.SOURCENAME
+				if (GetStations(m_loadedStationdata.SystemName).Any(x => x.Source == EddbDataProvider.SOURCENAME
 				                                                     &&
 				                                                     x.Name.Equals(m_loadedStationdata.Name,
 					                                                     StringComparison.InvariantCultureIgnoreCase)))
@@ -5438,7 +5428,7 @@ namespace RegulatedNoise
 				case "txtStationName":
 					if (m_StationIsNew)
 					{
-						Station existing = GetStation(m_currentStationdata.System, txtStationName.Text);
+						Station existing = GetStation(m_currentStationdata.SystemName, txtStationName.Text);
 						if (existing != null)
 						{
 							if (DateTime.Now.Subtract(m_StationWarningTime).TotalSeconds > 5)
@@ -5657,7 +5647,7 @@ namespace RegulatedNoise
 			if (m_StationIsNew)
 			{
 				// adding a new Station
-				existing = GetStation(m_currentStationdata.System, m_currentStationdata.Name);
+				existing = GetStation(m_currentStationdata.SystemName, m_currentStationdata.Name);
 				if (existing != null)
 				{
 					MsgBox.Show("A station with this name already exists", "Adding a new station", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
@@ -5667,7 +5657,7 @@ namespace RegulatedNoise
 			else if (!_oldStationName.Equals(m_currentStationdata.Name))
 			{
 				// changing Station name
-				existing = GetStation(m_currentStationdata.System, m_currentStationdata.Name);
+				existing = GetStation(m_currentStationdata.SystemName, m_currentStationdata.Name);
 				if (existing != null)
 				{
 					if (existing.Source.Contains(Eddn.SOURCENAME))

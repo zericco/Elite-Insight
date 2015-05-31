@@ -65,6 +65,7 @@
     <Compile Include="Messaging\EventBus.cs" />
     <Compile Include="Messaging\NotificationEventArgs.cs" />
     <Compile Include="Messaging\ProgressEvent.cs" />
+    <Compile Include="MissingDataException.cs" />
     <Compile Include="Properties\Annotations.cs" />
     <Compile Include="DomainModel\Commodities.cs" />
     <Compile Include="DomainModel\Commodity.cs" />

@@ -119,7 +119,6 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>dsCommodities.xsd</DependentUpon>
     </Compile>
-    <Compile Include="Elite Dangerous Specifics\EdLogLine.cs" />
     <Compile Include="Enums and Utility Classes\InputBox.cs" />
     <Compile Include="Enums and Utility Classes\ObjectCompare.cs" />
     <Compile Include="Enums and Utility Classes\PerformanceTimer.cs" />
@@ -136,12 +135,6 @@
     <Compile Include="Enums and Utility Classes\UnixTimeStamp.cs" />
     <Compile Include="Exceptions\InitializationException.cs" />
     <Compile Include="MarketDataValidator.cs" />
-    <Compile Include="MRmPTestTab\MRmPTestTab.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="MRmPTestTab\MRmPTestTab.Designer.cs">
-      <DependentUpon>MRmPTestTab.cs</DependentUpon>
-    </Compile>
     <Compile Include="Brainerous Pixeltest\Picturedata.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -263,9 +256,6 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Help Forms\HelpOCR.resx">
       <DependentUpon>HelpOCR.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="MRmPTestTab\MRmPTestTab.resx">
-      <DependentUpon>MRmPTestTab.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Brainerous Pixeltest\Picturedata.resx">
       <DependentUpon>Picturedata.cs</DependentUpon>
@@ -770,10 +760,6 @@
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>
-    <ProjectReference Include="$(SolutionDir)sources\EdClasses\EdClasses.csproj">
-      <Project>{236a934b-5543-4751-baa2-018dfa825271}</Project>
-      <Name>EdClasses</Name>
-    </ProjectReference>
     <ProjectReference Include="..\Elite.Insight.Core\Elite.Insight.Core.csproj">
       <Project>{1c6e84c0-a944-48be-b196-6e6278b1f7d7}</Project>
       <Name>Elite.Insight.Core</Name>

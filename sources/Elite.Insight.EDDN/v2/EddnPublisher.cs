@@ -70,7 +70,7 @@ namespace Elite.Insight.EDDN.v2
 								,Demand = commodityData.Demand
 								,DemandLevel = commodityData.DemandLevel
 								,SellPrice = commodityData.SellPrice
-								,Supply = commodityData.Stock
+								,Supply = commodityData.Supply
 								,SupplyLevel = commodityData.SupplyLevel
 							}
 						}
@@ -108,7 +108,7 @@ namespace Elite.Insight.EDDN.v2
 								,Demand = md.Demand
 								,DemandLevel = md.DemandLevel
 								,SellPrice = md.SellPrice
-								,Supply = md.Stock
+								,Supply = md.Supply
 								,SupplyLevel = md.SupplyLevel
 							}).ToArray()
 					,StationName = marketData.StationName

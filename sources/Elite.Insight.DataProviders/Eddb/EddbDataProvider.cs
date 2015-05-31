@@ -155,7 +155,7 @@ namespace Elite.Insight.DataProviders.Eddb
 				,
 				Source = SOURCENAME
 				,
-				Stock = marketData.Supply
+				Supply = marketData.Supply
 				,
 				SystemName = systemName
 				,
@@ -208,7 +208,7 @@ namespace Elite.Insight.DataProviders.Eddb
 				,
 				State = eddbStation.State
 				,
-				System = RetrieveSystemName(eddbStation.SystemId)
+				SystemName = RetrieveSystemName(eddbStation.SystemId)
 				,
 				Type = eddbStation.Type
 				,

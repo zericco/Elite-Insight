@@ -159,7 +159,7 @@ namespace Elite.Insight.Core.DomainModel
 						_byCommodity.Add(marketDataRow);
 						break;
 					case Market.UpdateState.Replace:
-						_byStation[marketDataRow.StationID].Set(marketDataRow);
+						_byStation[marketDataRow.StationFullName].Set(marketDataRow);
 						_byCommodity[marketDataRow.CommodityName].Set(marketDataRow);
 						break;
 					case Market.UpdateState.Discarded:
@@ -292,12 +292,12 @@ namespace Elite.Insight.Core.DomainModel
 
 			protected override string GetKey(MarketDataRow marketDataRow)
 			{
-				return marketDataRow.StationID;
+				return marketDataRow.StationFullName;
 			}
 
 			protected override StationMarket NewMarket(MarketDataRow marketDataRow)
 			{
-				return new StationMarket(marketDataRow.StationID, marketDataRow.SystemName, marketDataRow.StationName);
+				return new StationMarket(marketDataRow.StationFullName, marketDataRow.SystemName, marketDataRow.StationName);
 			}
 
 			public override string ToString()
@@ -371,7 +371,7 @@ namespace Elite.Insight.Core.DomainModel
 
 		protected override string GetKeyForItem(MarketDataRow item)
 		{
-			return item.StationID;
+			return item.StationFullName;
 		}
 
 		public override string ToString()

@@ -24,7 +24,7 @@ namespace Elite.Insight.Test.EDDN.v2
 			using (var publisher = new EddnPublisher())
 			{
 				publisher.TestMode = true;
-				publisher.Publish(new MarketDataRow() { CommodityName = "aCommodity", BuyPrice = 1234, Demand = 2345, SellPrice = 5325, StationName = "aStation", Stock = 53535, SystemName = "aSystem", DemandLevel = ProposalLevel.Low, SupplyLevel = ProposalLevel.High, SampleDate = DateTime.Today });				
+				publisher.Publish(new MarketDataRow() { CommodityName = "aCommodity", BuyPrice = 1234, Demand = 2345, SellPrice = 5325, StationName = "aStation", Supply = 53535, SystemName = "aSystem", DemandLevel = ProposalLevel.Low, SupplyLevel = ProposalLevel.High, SampleDate = DateTime.Today });				
 			}
 		}
 
@@ -45,7 +45,7 @@ namespace Elite.Insight.Test.EDDN.v2
 						Demand = i * 20000,
 						SellPrice = i * 1700,
 						StationName = "aStation" + (i / 10).ToString("00"),
-						Stock = (i % 10) * 10000,
+						Supply = (i % 10) * 10000,
 						SystemName = "aSystem",
 						DemandLevel = ProposalLevel.Low,
 						SupplyLevel = ProposalLevel.High,

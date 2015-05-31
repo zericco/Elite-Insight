@@ -22,7 +22,7 @@ namespace Elite.Insight.Core.DomainModel
 		}
 
 		[JsonIgnore]
-		public string StationID { get { return StationName + " [" + SystemName + "]"; } }
+		public string StationFullName { get { return StationName + " [" + SystemName + "]"; } }
 
 		[JsonProperty(PropertyName = "stationName")]
 		public string StationName
@@ -38,6 +38,9 @@ namespace Elite.Insight.Core.DomainModel
 			set { _commodityName = value.ToCleanTitleCase(); }
 		}
 
+		[JsonIgnore]
+		public long CommodityId { get; set; }
+
 		[JsonProperty(PropertyName = "sellPrice")]
 		public int SellPrice { get; set; }
 
@@ -45,7 +48,7 @@ namespace Elite.Insight.Core.DomainModel
 		public int BuyPrice { get; set; }
 
 		[JsonProperty(PropertyName = "stationStock")]
-		public int Stock { get; set; }
+		public int Supply { get; set; }
 
 		[JsonProperty(PropertyName = "demand")]
 		public int Demand { get; set; }
@@ -66,9 +69,12 @@ namespace Elite.Insight.Core.DomainModel
 		{
 			get
 			{
-				return CommodityName + "@" + StationID;
+				return CommodityName + "@" + StationFullName;
 			}
 		}
+
+		[JsonIgnore]
+		public long StationId { get; set; }
 
 		public override string ToString()
 		{
@@ -90,7 +96,7 @@ namespace Elite.Insight.Core.DomainModel
 				 ,BuyPrice = String.IsNullOrWhiteSpace(fields[4]) ? -1 : Int32.Parse(fields[4].Trim())
 				 ,Demand = String.IsNullOrWhiteSpace(fields[5]) ? -1 : Int32.Parse(fields[5].Trim())
 				 ,DemandLevel = fields[6].ToProposalLevel()
-				 ,Stock = String.IsNullOrWhiteSpace(fields[7]) ? -1 : Int32.Parse(fields[7].Trim())
+				 ,Supply = String.IsNullOrWhiteSpace(fields[7]) ? -1 : Int32.Parse(fields[7].Trim())
 				 ,SupplyLevel = fields[8].ToProposalLevel()
 				 ,SampleDate = String.IsNullOrWhiteSpace(fields[9]) ? DateTime.MinValue : ReadCsvDate(fields[9])
 			};
@@ -136,7 +142,7 @@ namespace Elite.Insight.Core.DomainModel
 							(BuyPrice > 0 ? BuyPrice.ToString(CultureInfo.InvariantCulture) : "") + ";" +
 							(Demand > 0 ? Demand.ToString(CultureInfo.InvariantCulture) : "") + ";" +
 							DemandLevel.Display() + ";" +
-							(Stock > 0 ? Stock.ToString(CultureInfo.InvariantCulture) : "") + ";" +
+							(Supply > 0 ? Supply.ToString(CultureInfo.InvariantCulture) : "") + ";" +
 							SupplyLevel.Display() + ";" +
 							XmlConvert.ToString(SampleDate, XmlDateTimeSerializationMode.Local) +
 							(useExtended ? ";" + Source : String.Empty);

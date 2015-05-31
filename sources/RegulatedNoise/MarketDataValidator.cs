@@ -41,7 +41,7 @@ namespace RegulatedNoise
 					// both on 0 is not plausible
 					plausibility = new PlausibilityState(false, "nor sell, nor buy price");
 				}
-				else if (marketData.SupplyLevel.HasValue || (simpleEDDNCheck && (marketData.Stock > 0)))
+				else if (marketData.SupplyLevel.HasValue || (simpleEDDNCheck && (marketData.Supply > 0)))
 				{
 					if (marketData.BuyPrice <= 0)
 					{
@@ -66,7 +66,7 @@ namespace RegulatedNoise
 																				  commodityData.SupplyWarningLevels.Buy.High +
 																				  "]");
 					}
-					if (marketData.Stock <= 0)
+					if (marketData.Supply <= 0)
 					{
 						// no supply quantity
 						plausibility = new PlausibilityState(false, "supply not provided");

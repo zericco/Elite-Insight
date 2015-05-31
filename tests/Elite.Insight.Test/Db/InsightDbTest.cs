@@ -11,6 +11,7 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Data;
 using System.Data.SQLite;
 using System.Diagnostics;
 using System.Globalization;
@@ -18,6 +19,7 @@ using System.IO;
 using System.Text;
 using Elite.Insight.Core;
 using Elite.Insight.Core.DomainModel;
+using Elite.Insight.Core.Helpers;
 using Elite.Insight.DataProviders;
 using Elite.Insight.DataProviders.Eddb;
 using Elite.Insight.Test.DataProviders;
@@ -28,12 +30,13 @@ namespace Elite.Insight.Test.Db
 	[TestFixture]
 	public class InsightDbTest
 	{
-		private const string DB_PATH = "elite-insight.test.db";
+		private const string TEST_DB_PATH = "elite-insight.test.db";
 
 		[Test]
+		[Ignore]
 		public void i_can_insert_a_system()
 		{
-			var db = new InsightDb(DB_PATH);
+			var db = new InsightDb(TEST_DB_PATH);
 			DataModel model = new DataModel(new TestLocalizer(), new TestValidator());
 			EddbDataProvider eddb = new EddbDataProvider();
 			eddb.ImportSystems(model.StarMap);
@@ -47,9 +50,41 @@ namespace Elite.Insight.Test.Db
 		}
 
 		[Test]
+		public void i_can_load_systems()
+		{
+			var db = new InsightDb(TEST_DB_PATH);
+			DataModel model = new DataModel(new TestLocalizer(), new TestValidator());
+			db.LoadModel(model, 50);
+			Debug.WriteLine(model.StarMap.Count +" system(s) loaded");
+			foreach (StarSystem starSystem in model.StarMap)
+			{
+				Debug.WriteLine(starSystem);
+			}
+		}
+
+		[Test]
+		public void i_can_load_market_data()
+		{
+			var db = new InsightDb(TEST_DB_PATH);
+			using (var cx = db.NewConnection())
+			{
+				using (var cmd = cx.CreateCommand())
+				{
+					cmd.CommandText = "select max(lastUpdate) from marketdata";
+					//var parameter = cmd.CreateParameter();
+					//parameter.ParameterName = "@lastUpdate";
+					//parameter.Value = DateTime.Today.AddDays(-25).ToUnixTimestamp();
+					//cmd.Parameters.Add(parameter);
+					Debug.WriteLine(UnixTimeStamp.ToDateTime((long) cmd.ExecuteScalar()));
+				}
+			}
+		}
+
+		[Test]
+		[Ignore]
 		public void i_can_insert_commodities()
 		{
-			var db = new InsightDb(DB_PATH);
+			var db = new InsightDb(TEST_DB_PATH);
 			DataModel model = new DataModel(new TestLocalizer(), new TestValidator());
 			EddbDataProvider eddb = new EddbDataProvider();
 			eddb.ImportCommodities(model.Commodities);
@@ -63,9 +98,10 @@ namespace Elite.Insight.Test.Db
 		}
 
 		[Test]
+		[Ignore]
 		public void i_can_insert_stations()
 		{
-			var db = new InsightDb(DB_PATH);
+			var db = new InsightDb(TEST_DB_PATH);
 			//using (var cx = db.NewConnection())
 			//{
 			//	using (var cmd = cx.CreateCommand())
@@ -94,9 +130,10 @@ namespace Elite.Insight.Test.Db
 		}
 
 		[Test]
-		public void normalize()
+		[Ignore]
+		public void Normalize()
 		{
-			var db = new InsightDb(DB_PATH);
+			var db = new InsightDb(TEST_DB_PATH);
 			using (var cx = db.NewConnection())
 			{
 				using (var cmd = cx.CreateCommand())
@@ -108,9 +145,10 @@ namespace Elite.Insight.Test.Db
 		}
 
 		[Test]
+		[Ignore]
 		public void i_can_insert_marketdatas()
 		{
-			var db = new InsightDb(DB_PATH);
+			var db = new InsightDb(TEST_DB_PATH);
 			//using (var cx = db.NewConnection())
 			//{
 			//	using (var cmd = cx.CreateCommand())
@@ -163,16 +201,24 @@ namespace Elite.Insight.Test.Db
 				cmd.CommandText = request;
 				using (var reader = cmd.ExecuteReader())
 				{
-					while (reader.Read())
-					{
-						for (int i = 0; i < reader.FieldCount; i++)
-						{
-							Debug.Write(reader[i] + ", ");
-						}
-						Debug.WriteLine("");
-					}
+					Display(reader);
 				}
 			}
+		}
+
+		private static void Display(IDataReader reader)
+		{
+			bool hasRows = false;
+			while (reader.Read())
+			{
+				hasRows = true;
+				for (int i = 0; i < reader.FieldCount; i++)
+				{
+					Debug.Write(reader[i] + ", ");
+				}
+				Debug.WriteLine("");
+			}
+			Debug.WriteIf(!hasRows, "No row.");
 		}
 
 		private void DisplayCommodities(SQLiteConnection cx)
@@ -225,28 +271,28 @@ namespace Elite.Insight.Test.Db
 			}
 		}
 
-//		private static void InsertTestSystems(SQLiteConnection cx)
-//		{
-//			using (var cmd = cx.CreateCommand())
-//			{
-//				var request = new StringBuilder(@"INSERT INTO systems
-//												(id,name,x,y,z,lastUpdate)
-//												VALUES");
-//				int i = 0;
-//				for (; i < 10; ++i)
-//				{
-//					request.AppendLine("(" + i + ",'system_" + i.ToString("00") + "'," + (i + .2).ToString(CultureInfo.InvariantCulture) +
-//											 "," + (i + .3).ToString(CultureInfo.InvariantCulture) + "," +
-//											 (i + .4).ToString(CultureInfo.InvariantCulture) + "," + ToParameter(DateTime.Now) + "),");
-//				}
-//				++i;
-//				request.AppendLine("(" + i + ",'system_" + i.ToString("00") + "'," + (i + .2).ToString(CultureInfo.InvariantCulture) +
-//										 "," + (i + .3).ToString(CultureInfo.InvariantCulture) + "," +
-//										 (i + .4).ToString(CultureInfo.InvariantCulture) + "," + ToParameter(DateTime.Now) + ")");
-//				cmd.CommandText = request.ToString();
-//				Debug.WriteLine(cmd.CommandText);
-//				cmd.ExecuteNonQuery();
-//			}
-//		}
+		//		private static void InsertTestSystems(SQLiteConnection cx)
+		//		{
+		//			using (var cmd = cx.CreateCommand())
+		//			{
+		//				var request = new StringBuilder(@"INSERT INTO systems
+		//												(id,name,x,y,z,lastUpdate)
+		//												VALUES");
+		//				int i = 0;
+		//				for (; i < 10; ++i)
+		//				{
+		//					request.AppendLine("(" + i + ",'system_" + i.ToString("00") + "'," + (i + .2).ToString(CultureInfo.InvariantCulture) +
+		//											 "," + (i + .3).ToString(CultureInfo.InvariantCulture) + "," +
+		//											 (i + .4).ToString(CultureInfo.InvariantCulture) + "," + ToParameter(DateTime.Now) + "),");
+		//				}
+		//				++i;
+		//				request.AppendLine("(" + i + ",'system_" + i.ToString("00") + "'," + (i + .2).ToString(CultureInfo.InvariantCulture) +
+		//										 "," + (i + .3).ToString(CultureInfo.InvariantCulture) + "," +
+		//										 (i + .4).ToString(CultureInfo.InvariantCulture) + "," + ToParameter(DateTime.Now) + ")");
+		//				cmd.CommandText = request.ToString();
+		//				Debug.WriteLine(cmd.CommandText);
+		//				cmd.ExecuteNonQuery();
+		//			}
+		//		}
 	}
 }
