@@ -28,12 +28,12 @@ namespace Elite.Insight.Core.Algorithms
 		    // Step 1
 		    if (n == 0)
 		    {
-			    return 0;
+			    return m;
 		    }
 
 		    if (m == 0)
 		    {
-			    return 0;
+			    return n;
 		    }
 
 		    s = s.ToLowerInvariant();

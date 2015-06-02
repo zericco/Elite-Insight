@@ -18,6 +18,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Windows.Forms.DataVisualization.Charting;
+using System.Xml;
 using CodeProject.Dialog;
 using Elite.Insight.Core;
 using Elite.Insight.Core.Algorithms;
@@ -706,8 +707,10 @@ namespace RegulatedNoise
 				setButton(bClearOcrOutput, false);
 				setButton(bEditResults, false);
 
-				_ocrThread = new Thread(() => ocr.ScreenshotCreated(fileSystemEventArgs.FullPath, tbCurrentSystemFromLogs.Text));
-				_ocrThread.IsBackground = false;
+				_ocrThread = new Thread(() => ocr.ScreenshotCreated(fileSystemEventArgs.FullPath, tbCurrentSystemFromLogs.Text))
+				{
+					IsBackground = false
+				};
 				_ocrThread.Start();
 			}
 			else
@@ -734,8 +737,7 @@ namespace RegulatedNoise
 
 					var s = _preOcrBuffer[0];
 					_preOcrBuffer.RemoveAt(0);
-					_ocrThread = new Thread(() => ocr.ScreenshotCreated(s, tbCurrentSystemFromLogs.Text));
-					_ocrThread.IsBackground = false;
+					_ocrThread = new Thread(() => ocr.ScreenshotCreated(s, tbCurrentSystemFromLogs.Text)) {IsBackground = false};
 					_ocrThread.Start();
 					ScreenshotsQueued("(" +
 													(_screenshotResultsBuffer.Count + ocr.ScreenshotBuffer.Count + _preOcrBuffer.Count) +
@@ -2135,30 +2137,29 @@ namespace RegulatedNoise
 				return;
 			}
 
-			var dialog = new FolderBrowserDialog();
-			dialog.SelectedPath = Environment.GetFolderPath((Environment.SpecialFolder.MyPictures)) + @"\Frontier Developments\Elite Dangerous";
+			var dialog = new FolderBrowserDialog
+			{
+				SelectedPath =
+					Environment.GetFolderPath((Environment.SpecialFolder.MyPictures)) + @"\Frontier Developments\Elite Dangerous"
+			};
 			if (dialog.ShowDialog() == DialogResult.OK)
 			{
 				_settings.MostRecentOCRFolder = dialog.SelectedPath;
-
+				foreach (FileInfo file in new DirectoryInfo(dialog.SelectedPath).EnumerateFiles("Screenshot_*.bmp"))
+				{
+					ScreenshotCreated(null, new FileSystemEventArgs(WatcherChangeTypes.Created, dialog.SelectedPath, file.Name));
+				}
 				if (_fileSystemWatcher == null)
 					_fileSystemWatcher = new FileSystemWatcher();
-
 				_fileSystemWatcher.Path = dialog.SelectedPath;
-
 				_fileSystemWatcher.Filter = "*.bmp";
-
 				_fileSystemWatcher.NotifyFilter = NotifyFilters.LastAccess |
 									  NotifyFilters.LastWrite |
 									  NotifyFilters.FileName |
 									  NotifyFilters.DirectoryName;
-
 				_fileSystemWatcher.IncludeSubdirectories = false;
-
 				_fileSystemWatcher.Created += ScreenshotCreated;
-
 				_fileSystemWatcher.EnableRaisingEvents = true;
-
 				ocr.IsMonitoring = true;
 			}
 
@@ -2344,11 +2345,8 @@ namespace RegulatedNoise
 			if (InvokeRequired)
 			{
 				Int32 currentTry = 0;
-				bool Retry = false;
-
 				do
 				{
-					Retry = false;
 					try
 					{
 						Invoke(new DisplayResultsDelegate(DisplayResults), s);
@@ -2362,10 +2360,9 @@ namespace RegulatedNoise
 						{
 							Thread.Sleep(333);
 							currentTry++;
-							Retry = true;
 						}
 					}
-				} while (Retry);
+				} while (true);
 			}
 
 			tbOcrStationName.Text = s; // CLARK HUB
@@ -2400,7 +2397,7 @@ namespace RegulatedNoise
 		private string[] _rowIds;
 		private string _screenshotName;
 
-		private List<ScreeenshotResults> _screenshotResultsBuffer = new List<ScreeenshotResults>();
+		private readonly List<ScreeenshotResults> _screenshotResultsBuffer = new List<ScreeenshotResults>();
 		private string _csvOutputSoFar;
 		private List<string> _commoditiesSoFar = new List<string>();
 
@@ -2543,31 +2540,35 @@ namespace RegulatedNoise
 					else if (_correctionColumn == 5 || _correctionColumn == 7) // hacks for LOW/MED/HIGH
 					{
 						var commodityLevelUpperCase = StripPunctuationFromScannedText(_commodityTexts[_correctionRow, _correctionColumn]);
-
-						var levenshteinLow = Levenshtein.Compute(CommodityLevel[(byte)enCommodityLevel.LOW].ToUpper(), commodityLevelUpperCase);
-						var levenshteinMed = Levenshtein.Compute(CommodityLevel[(byte)enCommodityLevel.MED].ToUpper(), commodityLevelUpperCase);
-						var levenshteinHigh = Levenshtein.Compute(CommodityLevel[(byte)enCommodityLevel.HIGH].ToUpper(), commodityLevelUpperCase);
-						var levenshteinBlank = Levenshtein.Compute("", commodityLevelUpperCase);
-
-						//Pick the lowest levenshtein number
-						var lowestLevenshtein = Math.Min(Math.Min(levenshteinLow, levenshteinMed), Math.Min(levenshteinHigh, levenshteinBlank));
-
-						if (lowestLevenshtein == levenshteinLow)
-						{
-							_commodityTexts[_correctionRow, _correctionColumn] = "LOW";
-						}
-						else if (lowestLevenshtein == levenshteinMed)
-						{
-							_commodityTexts[_correctionRow, _correctionColumn] = "MED";
-						}
-						else if (lowestLevenshtein == levenshteinHigh)
-						{
-							_commodityTexts[_correctionRow, _correctionColumn] = "HIGH";
-						}
-						else // lowestLevenshtein == levenshteinBlank
+						if (String.IsNullOrWhiteSpace(commodityLevelUpperCase))
 						{
 							_commodityTexts[_correctionRow, _correctionColumn] = "";
 						}
+						else
+						{
+							var levenshteinLow = Levenshtein.Compute(CommodityLevel[(byte)enCommodityLevel.LOW].ToUpper(), commodityLevelUpperCase);
+							var levenshteinMed = Levenshtein.Compute(CommodityLevel[(byte)enCommodityLevel.MED].ToUpper(), commodityLevelUpperCase);
+							var levenshteinHigh = Levenshtein.Compute(CommodityLevel[(byte)enCommodityLevel.HIGH].ToUpper(), commodityLevelUpperCase);							
+							//Pick the lowest levenshtein number
+							var lowestLevenshtein = Math.Min(Math.Min(levenshteinLow, levenshteinMed), Math.Min(levenshteinHigh, commodityLevelUpperCase.Length));
+							if (lowestLevenshtein == levenshteinLow)
+							{
+								_commodityTexts[_correctionRow, _correctionColumn] = "LOW";
+							}
+							else if (lowestLevenshtein == levenshteinMed)
+							{
+								_commodityTexts[_correctionRow, _correctionColumn] = "MED";
+							}
+							else if (lowestLevenshtein == levenshteinHigh)
+							{
+								_commodityTexts[_correctionRow, _correctionColumn] = "HIGH";
+							}
+							else
+							{
+								_commodityTexts[_correctionRow, _correctionColumn] = "";								
+							}
+						}
+
 
 						// we will never be challenged on low/med/high again.  this doesn't get internationalized on foreign-language installs... does it? :)
 						_originalBitmapConfidences[_correctionRow, _correctionColumn] = 1;
@@ -2600,12 +2601,12 @@ namespace RegulatedNoise
 
 							for (int col = 0; col < _commodityTexts.GetLength(1); col++)
 							{
-								_commodityTexts[row, col] = _commodityTexts[row, col].Replace("\r", "").Replace("\n", "");
+								_commodityTexts[row, col] = _commodityTexts[row, col].Replace(Environment.NewLine, "");
 
 								if (col == 3) continue; // don't export cargo levels
 								finalOutput += _commodityTexts[row, col] + ";";
 							}
-							finalOutput += ocr.CurrentScreenshotDateTime.ToString("s").Substring(0, 16) + ";";
+							finalOutput += XmlConvert.ToString(ocr.CurrentScreenshotDateTime, XmlDateTimeSerializationMode.Local) + ";";
 
 							if (cbExtendedInfoInCSV.Checked)
 								finalOutput += Path.GetFileName(_screenshotName) + ";";
@@ -2659,7 +2660,7 @@ namespace RegulatedNoise
 				if (_preOcrBuffer.Count == 0 && ocr.ScreenshotBuffer.Count == 0)
 				{
 
-					if (CheckPricePlausibility(tbFinalOcrOutput.Text.Replace("\r", "").Split('\n')))
+					if (CheckPricePlausibility(tbFinalOcrOutput.Text.Split(new[]{Environment.NewLine}, StringSplitOptions.RemoveEmptyEntries)))
 					{
 						tbFinalOcrOutput.Enabled = true;
 						tbCommoditiesOcrOutput.Text = "Implausible Results!";
