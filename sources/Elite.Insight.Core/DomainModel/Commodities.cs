@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using Elite.Insight.Core.Helpers;
 
@@ -90,7 +91,13 @@ namespace Elite.Insight.Core.DomainModel
 
 		public void Update(Commodity commodity)
 		{
-			commodity.Name = GetBasename(commodity.Name);
+			string basename = GetBasename(commodity.Name);
+			if (String.IsNullOrEmpty(basename))
+			{
+				Trace.TraceWarning("unknown commodity " + commodity);
+				return;
+			}
+			commodity.Name = basename;
 			commodity.LocalizedName = _localization.TranslateToCurrent(commodity.Name);
 			Commodity existingCommodity;
 			if (!_commodities.TryGetValue(commodity.Name, out existingCommodity))

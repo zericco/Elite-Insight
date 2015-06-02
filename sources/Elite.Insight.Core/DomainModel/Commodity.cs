@@ -107,6 +107,11 @@ namespace Elite.Insight.Core.DomainModel
 		{
 			return Name.GetHashCode();
 		}
+
+		public override string ToString()
+		{
+			return LocalizedName ?? Name;
+		}
 	}
 
 	public class WarningLevels

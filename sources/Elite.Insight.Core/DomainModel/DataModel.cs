@@ -68,10 +68,16 @@ namespace Elite.Insight.Core.DomainModel
 
 		public void UpdateMarket(MarketDataRow marketdata)
 		{
+			string commodityName = _localizer.TranslateInEnglish(marketdata.CommodityName);
+			if (String.IsNullOrEmpty(commodityName))
+			{
+				RaiseValidationEvent(new ValidationEventArgs(new PlausibilityState(false, "unknown commodity name " + marketdata.CommodityName)));
+				return;
+			}
 			PlausibilityState plausibility = Validate(marketdata);
 			if (plausibility.Plausible)
 			{
-				marketdata.CommodityName = _localizer.TranslateInEnglish(marketdata.CommodityName);
+				marketdata.CommodityName = commodityName;
 				GalacticMarket.Update(marketdata);
 			}
 			else

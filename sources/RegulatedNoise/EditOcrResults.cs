@@ -41,7 +41,7 @@ namespace RegulatedNoise
 
 			dgvData.Rows.Clear();
 
-			var rows = dataToEdit.Split(new string[] { "\r\n" }, StringSplitOptions.None);
+			var rows = dataToEdit.Split(new string[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
 
 			foreach (var row in rows)
 			{
